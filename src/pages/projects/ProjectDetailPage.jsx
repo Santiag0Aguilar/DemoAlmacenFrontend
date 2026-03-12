@@ -192,11 +192,12 @@ export default function ProjectDetailPage() {
             <div
               key={sp.id}
               className="px-5 py-3.5 flex items-center justify-between hover:bg-white/[0.02] cursor-pointer"
-              onClick={() => navigate(`/contracts/${sp.id}`)}
+              onClick={() => navigate(`/subprojects/${sp.id}`)}
             >
               <div>
                 <div className="text-sm font-medium text-white">
                   {sp.nombre}
+                  {console.log(sp)}
                 </div>
                 <div className="text-xs text-slate-500">
                   {sp.ubicacion || sp.encargado?.nombre}

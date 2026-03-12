@@ -267,7 +267,7 @@ export default function ProjectsPage() {
 
                 <div className="flex items-center justify-between mt-4">
                   <span className="text-xs text-slate-600">
-                    {p._count?.Contracts || 0} subproyectos
+                    {p._count?.Contracts || 0} contratos
                   </span>
                   <ChevronRight
                     size={14}
