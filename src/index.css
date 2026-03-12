@@ -1,0 +1,194 @@
+/* src/index.css */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --color-primary: #f97316;
+    --color-primary-dark: #ea580c;
+    --color-bg: #0d1117;
+    --color-surface: #161b27;
+    --color-surface-2: #1e2533;
+    --color-border: rgba(255, 255, 255, 0.06);
+    --color-text: #e2e8f0;
+    --color-text-muted: #64748b;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  body {
+    background-color: var(--color-bg);
+    color: var(--color-text);
+    font-family: "DM Sans", system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Scrollbar personalizado */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: var(--color-bg);
+  }
+  ::-webkit-scrollbar-thumb {
+    background: rgba(249, 115, 22, 0.3);
+    border-radius: 3px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(249, 115, 22, 0.6);
+  }
+
+  /* Selección de texto */
+  ::selection {
+    background-color: rgba(249, 115, 22, 0.25);
+  }
+}
+
+@layer components {
+  /* ─── Card base ─────────────────────────────────────────── */
+  .card {
+    @apply bg-[#161b27] border border-white/5 rounded-xl;
+  }
+
+  .card-hover {
+    @apply card transition-all duration-200 hover:border-orange-500/20 hover:shadow-glow-sm;
+  }
+
+  /* ─── Botones ────────────────────────────────────────────── */
+  .btn {
+    @apply inline-flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .btn-primary {
+    @apply btn bg-brand-500 text-white hover:bg-brand-600 active:scale-[0.98] shadow-glow-sm;
+  }
+
+  .btn-secondary {
+    @apply btn bg-white/5 text-slate-300 border border-white/10 hover:bg-white/10 hover:text-white;
+  }
+
+  .btn-danger {
+    @apply btn bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20;
+  }
+
+  .btn-ghost {
+    @apply btn text-slate-400 hover:text-white hover:bg-white/5;
+  }
+
+  /* ─── Inputs ─────────────────────────────────────────────── */
+  .input {
+    @apply w-full bg-[#1e2533] border border-white/10 rounded-lg px-3 py-2.5 text-sm text-slate-200
+           placeholder:text-slate-600
+           focus:outline-none focus:border-brand-500/60 focus:ring-1 focus:ring-brand-500/30
+           transition-colors duration-150;
+  }
+
+  .input-label {
+    @apply block text-xs font-medium text-slate-400 mb-1.5 uppercase tracking-wide;
+  }
+
+  /* ─── Badge / Pill ───────────────────────────────────────── */
+  .badge {
+    @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium;
+  }
+
+  .badge-green {
+    @apply badge bg-emerald-500/15 text-emerald-400;
+  }
+  .badge-orange {
+    @apply badge bg-orange-500/15 text-orange-400;
+  }
+  .badge-red {
+    @apply badge bg-red-500/15 text-red-400;
+  }
+  .badge-blue {
+    @apply badge bg-blue-500/15 text-blue-400;
+  }
+  .badge-gray {
+    @apply badge bg-slate-500/15 text-slate-400;
+  }
+  .badge-yellow {
+    @apply badge bg-yellow-500/15 text-yellow-400;
+  }
+
+  /* ─── Table ──────────────────────────────────────────────── */
+  .table-wrapper {
+    @apply overflow-x-auto;
+  }
+
+  .table {
+    @apply w-full text-sm;
+  }
+
+  .table thead tr {
+    @apply border-b border-white/5;
+  }
+
+  .table thead th {
+    @apply text-left px-4 py-3 text-xs uppercase tracking-wider text-slate-500 font-medium;
+  }
+
+  .table tbody tr {
+    @apply border-b border-white/5 hover:bg-white/[0.02] transition-colors;
+  }
+
+  .table tbody td {
+    @apply px-4 py-3 text-slate-300;
+  }
+
+  /* ─── KPI Card ───────────────────────────────────────────── */
+  .kpi-card {
+    @apply card p-5 flex flex-col gap-1 relative overflow-hidden;
+  }
+
+  .kpi-value {
+    @apply font-display text-3xl font-bold text-white;
+  }
+
+  .kpi-label {
+    @apply text-xs text-slate-500 uppercase tracking-wider;
+  }
+
+  /* ─── Sidebar nav link ───────────────────────────────────── */
+  .nav-link {
+    @apply flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-slate-400 
+           hover:text-white hover:bg-white/5 transition-all duration-150;
+  }
+
+  .nav-link.active {
+    @apply text-brand-400 bg-brand-500/10 border border-brand-500/20;
+  }
+
+  /* ─── Page header ────────────────────────────────────────── */
+  .page-header {
+    @apply mb-6 flex items-start justify-between gap-4;
+  }
+
+  .page-title {
+    @apply font-display text-2xl font-bold text-white;
+  }
+
+  .page-subtitle {
+    @apply text-sm text-slate-500 mt-0.5;
+  }
+
+  /* ─── Status dot ─────────────────────────────────────────── */
+  .status-dot {
+    @apply inline-block w-2 h-2 rounded-full;
+  }
+}
+
+/* ─── Noise texture overlay (aesthetic detail) ────────────────── */
+.noise-overlay::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+  pointer-events: none;
+  opacity: 0.4;
+}
