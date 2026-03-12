@@ -15,12 +15,12 @@ export const authService = {
 
 // src/services/tools.service.js — exportado abajo también
 export const toolsService = {
-  getAll: (params) => api.get("/tools", { params }).then((r) => r.data.data),
-  getById: (id) => api.get(`/tools/${id}`).then((r) => r.data.data),
-  create: (data) => api.post("/tools", data).then((r) => r.data.data),
+  getAll: (params) => api.get("/resource", { params }).then((r) => r.data.data),
+  getById: (id) => api.get(`/resource/${id}`).then((r) => r.data.data),
+  create: (data) => api.post("/resource", data).then((r) => r.data.data),
   update: (id, data) =>
-    api.patch(`/tools/${id}`, data).then((r) => r.data.data),
-  delete: (id) => api.delete(`/tools/${id}`),
+    api.patch(`/resource/${id}`, data).then((r) => r.data.data),
+  delete: (id) => api.delete(`/resource/${id}`),
 };
 
 export const assignmentsService = {
