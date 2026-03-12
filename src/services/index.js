@@ -50,11 +50,11 @@ export const projectsService = {
 
 export const subprojectsService = {
   getByProject: (proyectoId) =>
-    api.get(`/subprojects/by-project/${proyectoId}`).then((r) => r.data.data),
-  getById: (id) => api.get(`/subprojects/${id}`).then((r) => r.data.data),
-  create: (data) => api.post("/subprojects", data).then((r) => r.data.data),
+    api.get(`/contracts/by-project/${proyectoId}`).then((r) => r.data.data),
+  getById: (id) => api.get(`/contracts/${id}`).then((r) => r.data.data),
+  create: (data) => api.post("/contracts", data).then((r) => r.data.data),
   update: (id, data) =>
-    api.patch(`/subprojects/${id}`, data).then((r) => r.data.data),
+    api.patch(`/contracts/${id}`, data).then((r) => r.data.data),
 };
 
 export const tasksService = {

@@ -7,7 +7,7 @@ import { Loader2 } from "lucide-react";
 export default function SubprojectDetailPage() {
   const { id } = useParams();
   const { data: sp, isLoading } = useQuery({
-    queryKey: ["subproject", id],
+    queryKey: ["contracts", id],
     queryFn: () => subprojectsService.getById(id),
   });
 
