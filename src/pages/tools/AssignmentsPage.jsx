@@ -23,52 +23,113 @@ const STATUS_BADGE = {
 };
 
 function AssignmentForm({ onSubmit, isLoading }) {
+  const { user } = useAuthStore();
+
   const [form, setForm] = useState({
-    herramientaId: "",
+    tipo: "TOOL",
+    resourceId: "",
     trabajadorId: "",
     proyectoId: "",
+    quantity: "",
     fechaLimite: "",
     notas: "",
   });
-  const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
 
-  const { data: tools = [] } = useQuery({
-    queryKey: ["tools", "ACTIVA"],
-    queryFn: () => toolsService.getAll({ estado: "ACTIVA" }),
+  const set = (k) => (e) =>
+    setForm((f) => ({
+      ...f,
+      [k]: e.target.value,
+    }));
+
+  const { data: resources = [] } = useQuery({
+    queryKey: ["resources"],
+    queryFn: () => toolsService.getAll(),
   });
+
   const { data: users = [] } = useQuery({
     queryKey: ["users", "TRABAJADOR"],
     queryFn: () => usersService.getAll({ role: "TRABAJADOR" }),
   });
+
   const { data: projects = [] } = useQuery({
     queryKey: ["projects"],
     queryFn: () => projectsService.getAll(),
   });
 
+  const filteredResources = resources.filter((r) => {
+    if (r.tipo?.toUpperCase() !== form.tipo) return false;
+
+    if (form.tipo === "TOOL") return r.estado === "ACTIVA";
+
+    if (form.tipo === "CONSUMABLE") return r.estado === "STOCK" && r.stock > 0;
+
+    return false;
+  });
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+
+    const payload = {
+      resourceId: form.resourceId,
+      trabajadorId: form.trabajadorId,
+      encargadoId: user.id,
+      tipo: form.tipo,
+      proyectoId: form.proyectoId || undefined,
+      notas: form.notas || undefined,
+    };
+
+    if (form.tipo === "TOOL" && form.fechaLimite) {
+      payload.fechaLimite = form.fechaLimite;
+    }
+
+    if (form.tipo === "CONSUMABLE") {
+      payload.quantity = Number(form.quantity);
+    }
+
+    onSubmit(payload);
+  };
+
   return (
-    <form
-      onSubmit={(e) => {
-        e.preventDefault();
-        onSubmit(form);
-      }}
-      className="space-y-4"
-    >
+    <form onSubmit={handleSubmit} className="space-y-4">
       <div>
-        <label className="input-label">Herramienta * (disponibles)</label>
+        <label className="input-label">Tipo *</label>
+        <select className="input" value={form.tipo} onChange={set("tipo")}>
+          <option value="TOOL">Herramienta</option>
+          <option value="CONSUMABLE">Consumible</option>
+        </select>
+      </div>
+
+      <div>
+        <label className="input-label">Recurso *</label>
         <select
           className="input"
-          value={form.herramientaId}
-          onChange={set("herramientaId")}
+          value={form.resourceId}
+          onChange={set("resourceId")}
           required
         >
-          <option value="">Seleccionar herramienta...</option>
-          {tools.map((t) => (
-            <option key={t.id} value={t.id}>
-              {t.nombre} {t.numeroSerie ? `· ${t.numeroSerie}` : ""}
+          <option value="">Seleccionar recurso...</option>
+          {filteredResources.map((r) => (
+            <option key={r.id} value={r.id}>
+              {r.nombre} {r.numeroSerie ? `· ${r.numeroSerie}` : ""}
             </option>
           ))}
         </select>
       </div>
+
+      {form.tipo === "CONSUMABLE" && (
+        <div>
+          <label className="input-label">Cantidad *</label>
+          <input
+            type="number"
+            min="1"
+            className="input"
+            value={form.quantity}
+            onChange={set("quantity")}
+            required
+          />
+        </div>
+      )}
+
       <div>
         <label className="input-label">Trabajador *</label>
         <select
@@ -85,8 +146,9 @@ function AssignmentForm({ onSubmit, isLoading }) {
           ))}
         </select>
       </div>
+
       <div>
-        <label className="input-label">Proyecto (opcional)</label>
+        <label className="input-label">Proyecto</label>
         <select
           className="input"
           value={form.proyectoId}
@@ -100,15 +162,19 @@ function AssignmentForm({ onSubmit, isLoading }) {
           ))}
         </select>
       </div>
-      <div>
-        <label className="input-label">Fecha límite de devolución</label>
-        <input
-          className="input"
-          type="datetime-local"
-          value={form.fechaLimite}
-          onChange={set("fechaLimite")}
-        />
-      </div>
+
+      {form.tipo === "TOOL" && (
+        <div>
+          <label className="input-label">Fecha límite</label>
+          <input
+            type="datetime-local"
+            className="input"
+            value={form.fechaLimite}
+            onChange={set("fechaLimite")}
+          />
+        </div>
+      )}
+
       <div>
         <label className="input-label">Notas</label>
         <textarea
@@ -118,18 +184,18 @@ function AssignmentForm({ onSubmit, isLoading }) {
           onChange={set("notas")}
         />
       </div>
+
       <button
         type="submit"
         className="btn-primary w-full justify-center"
         disabled={isLoading}
       >
         {isLoading && <Loader2 size={14} className="animate-spin" />}
-        Asignar herramienta
+        Asignar recurso
       </button>
     </form>
   );
 }
-
 export default function AssignmentsPage() {
   const { hasRole } = useAuthStore();
   const queryClient = useQueryClient();
@@ -148,7 +214,17 @@ export default function AssignmentsPage() {
       setShowCreate(false);
       toast.success("Herramienta asignada");
     },
-    onError: (e) => toast.error(e.response?.data?.message || "Error"),
+    onError: (e) => {
+      const data = e.response?.data;
+
+      if (data?.errors?.length) {
+        data.errors.forEach((err) => {
+          toast.error(`${err.path}: ${err.msg}`);
+        });
+      } else {
+        toast.error(data?.message || "Error");
+      }
+    },
   });
 
   const returnMutation = useMutation({
@@ -157,7 +233,17 @@ export default function AssignmentsPage() {
       queryClient.invalidateQueries({ queryKey: ["assignments"] });
       toast.success("Herramienta devuelta");
     },
-    onError: (e) => toast.error(e.response?.data?.message || "Error"),
+    onError: (e) => {
+      const data = e.response?.data;
+
+      if (data?.errors?.length) {
+        data.errors.forEach((err) => {
+          toast.error(`${err.path}: ${err.msg}`);
+        });
+      } else {
+        toast.error(data?.message || "Error");
+      }
+    },
   });
 
   return (
