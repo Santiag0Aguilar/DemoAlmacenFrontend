@@ -1,7 +1,12 @@
 // src/pages/projects/ProjectDetailPage.jsx
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { projectsService, subprojectsService } from "@/services";
+import {
+  projectsService,
+  subprojectsService,
+  projectWorkersService,
+  attendanceService,
+} from "@/services";
 import { useAuthStore } from "@/store/authStore";
 import { Loader2, Plus, ChevronRight } from "lucide-react";
 import { useState } from "react";
@@ -99,16 +104,195 @@ function SubprojectForm({ proyectoId, onSubmit, isLoading }) {
   );
 }
 
+function AttendanceTable({
+  workers,
+  workersAvailable,
+  encargadoId,
+  onSubmit,
+  assignWorker,
+  removeWorker,
+}) {
+  const [rows, setRows] = useState({});
+  console.log(workers);
+  const setEstado = (id, estado) => {
+    setRows((r) => ({
+      ...r,
+      [id]: { ...r[id], estado },
+    }));
+  };
+
+  const submit = () => {
+    const now = new Date();
+
+    const asistencias = workers.map((w) => ({
+      trabajadorId: w.trabajadorId,
+      estado: rows[w.trabajadorId]?.estado || "PRESENTE",
+      horaEntrada: now.toISOString(),
+    }));
+
+    onSubmit({
+      fecha: now.toISOString().split("T")[0],
+      encargadoId,
+      asistencias,
+    });
+  };
+  const assignedIds = new Set(workers.map((w) => w.trabajadorId));
+  const availableWorkers = workersAvailable.filter(
+    (w) => !assignedIds.has(w.id),
+  );
+  return (
+    <div className="card">
+      {/* Asignar trabajador */}
+      <div className="px-5 py-4 border-b border-white/5">
+        <h2 className="text-sm font-semibold text-slate-300">
+          Asignar trabajador
+        </h2>
+      </div>
+
+      <div className="p-4 flex gap-2 border-b border-white/5">
+        <select
+          className="input flex-1"
+          onChange={(e) => assignWorker(e.target.value)}
+          defaultValue=""
+        >
+          <option value="" disabled>
+            Seleccionar trabajador
+          </option>
+
+          {availableWorkers.map((w) => (
+            <option key={w.id} value={w.id}>
+              {w.nombre}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      {/* Asistencia */}
+      <div className="px-5 py-4 border-b border-white/5">
+        <h2 className="text-sm font-semibold text-slate-300">
+          Asistencia de hoy
+        </h2>
+      </div>
+
+      <div className="divide-y divide-white/5">
+        {workers.map((w) => (
+          <div
+            key={w.id}
+            className="px-5 py-3 flex justify-between items-center"
+          >
+            <div>
+              <div className="text-sm">{w.trabajador.nombre}</div>
+              <div className="text-xs text-slate-500">
+                {w.trabajador.identificador}
+              </div>
+            </div>
+
+            <div className="flex gap-3 items-center">
+              <select
+                className="input w-32"
+                onChange={(e) => setEstado(w.trabajadorId, e.target.value)}
+              >
+                <option value="PRESENTE">Presente</option>
+                <option value="FALTA">Falta</option>
+                <option value="RETARDO">Retardo</option>
+                <option value="PERMISO">Permiso</option>
+                <option value="VACACIONES">Vacaciones</option>
+              </select>
+
+              <button
+                className="text-red-400 text-xs hover:text-red-300"
+                onClick={() => removeWorker(w.trabajadorId)}
+              >
+                Quitar
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div className="p-4">
+        <button className="btn-primary w-full justify-center" onClick={submit}>
+          Guardar asistencia
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export default function ProjectDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { hasRole } = useAuthStore();
   const queryClient = useQueryClient();
   const [showCreate, setShowCreate] = useState(false);
-
+  const { user } = useAuthStore();
+  console.log(user);
   const { data: project, isLoading } = useQuery({
     queryKey: ["project", id],
     queryFn: () => projectsService.getById(id),
+  });
+
+  const { data: workers = [] } = useQuery({
+    queryKey: ["project-workers", id],
+    queryFn: () => projectWorkersService.getByProject(id),
+  });
+
+  const { data: todayAttendance = [] } = useQuery({
+    queryKey: ["attendance-today", id],
+    queryFn: () => attendanceService.getToday(id),
+  });
+
+  const { data: workersAvailable = [] } = useQuery({
+    queryKey: ["workers"],
+    queryFn: () =>
+      import("@/services").then((s) =>
+        s.usersService.getAll({ role: "TRABAJADOR" }),
+      ),
+  });
+
+  const assignWorkerMutation = useMutation({
+    mutationFn: (trabajadorId) =>
+      projectWorkersService.assign(id, { trabajadorId }),
+
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["project-workers", id] });
+      toast.success("Trabajador asignado");
+    },
+
+    onError: (e) => {
+      toast.error(e.response?.data?.message || "Error asignando trabajador");
+    },
+  });
+
+  const removeWorkerMutation = useMutation({
+    mutationFn: (workerId) => projectWorkersService.remove(id, workerId),
+
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["project-workers", id] });
+      toast.success("Trabajador removido del proyecto");
+    },
+
+    onError: (e) => {
+      toast.error(e.response?.data?.message || "Error removiendo trabajador");
+    },
+  });
+  const attendanceMutation = useMutation({
+    mutationFn: (data) => attendanceService.create(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["attendance-today", id] });
+      toast.success("Asistencia guardada");
+    },
+    onError: (e) => {
+      const data = e.response?.data;
+
+      if (data?.errors?.length) {
+        data.errors.forEach((err) => {
+          toast.error(`${err.path}: ${err.msg}`);
+        });
+      } else {
+        toast.error(data?.message || "Error");
+      }
+    },
   });
   /*   console.log(project); */
   const createSubMutation = useMutation({
@@ -235,6 +419,15 @@ export default function ProjectDetailPage() {
           isLoading={createSubMutation.isPending}
         />
       </Modal>
+
+      <AttendanceTable
+        workers={workers}
+        workersAvailable={workersAvailable}
+        encargadoId={user?.id}
+        onSubmit={attendanceMutation.mutate}
+        assignWorker={assignWorkerMutation.mutate}
+        removeWorker={removeWorkerMutation.mutate}
+      />
     </div>
   );
 }

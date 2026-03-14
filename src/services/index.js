@@ -48,6 +48,27 @@ export const projectsService = {
     api.patch(`/projects/${id}`, data).then((r) => r.data.data),
 };
 
+export const projectWorkersService = {
+  getByProject: (projectId) =>
+    api.get(`/projects/${projectId}/workers`).then((r) => r.data.data),
+
+  assign: (projectId, data) =>
+    api.post(`/projects/${projectId}/workers`, data).then((r) => r.data.data),
+
+  remove: (projectId, workerId) =>
+    api.patch(`/projects/${projectId}/workers/${workerId}/remove`),
+};
+
+export const attendanceService = {
+  getToday: (projectId) =>
+    api.get(`/projects/${projectId}/attendance/today`).then((r) => r.data.data),
+
+  create: (projectId, data) =>
+    api
+      .post(`/projects/${projectId}/attendance`, data)
+      .then((r) => r.data.data),
+};
+
 export const subprojectsService = {
   getByProject: (proyectoId) =>
     api.get(`/contracts/by-project/${proyectoId}`).then((r) => r.data.data),
