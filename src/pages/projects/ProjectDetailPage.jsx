@@ -133,12 +133,26 @@ function AttendanceTable({
     });
   };
 
-  console.log(workers);
   const setEstado = (id, estado) => {
-    setRows((r) => ({
-      ...r,
-      [id]: { ...r[id], estado },
-    }));
+    setRows((r) => {
+      const prev = r[id] || {};
+
+      const newRow = { ...prev, estado };
+
+      // limpiar horas personalizadas si ya no aplica
+      if (estado !== "EXTRA") {
+        delete newRow.horaSalida;
+      }
+
+      if (estado !== "RETARDO") {
+        delete newRow.horaEntrada;
+      }
+
+      return {
+        ...r,
+        [id]: newRow,
+      };
+    });
   };
 
   const submit = () => {
@@ -206,6 +220,7 @@ function AttendanceTable({
           {availableWorkers.map((w) => (
             <option key={w.id} value={w.id}>
               {w.nombre}
+              {console.log(w)}
             </option>
           ))}
         </select>
@@ -263,17 +278,14 @@ function AttendanceTable({
                 {estadoActual === "RETARDO" && (
                   <button
                     className="btn-secondary text-xs"
-                    onClick={() =>
-                      setRows((r) => ({
-                        ...r,
-                        [w.trabajadorId]: {
-                          ...r[w.trabajadorId],
-                          horaEntrada: new Date().toISOString(),
-                        },
-                      }))
-                    }
+                    onClick={() => {
+                      setSelectedWorker(w.trabajadorId);
+                      setShowEntradaModal(true);
+                    }}
                   >
-                    Hora entrada trabajador
+                    {rows[w.trabajadorId]?.horaEntrada
+                      ? `Entrada: ${formatHora(rows[w.trabajadorId].horaEntrada)}`
+                      : "Hora entrada trabajador"}
                   </button>
                 )}
 
@@ -381,7 +393,7 @@ export default function ProjectDetailPage() {
   const queryClient = useQueryClient();
   const [showCreate, setShowCreate] = useState(false);
   const { user } = useAuthStore();
-  console.log(user);
+
   const { data: project, isLoading } = useQuery({
     queryKey: ["project", id],
     queryFn: () => projectsService.getById(id),
@@ -449,7 +461,7 @@ export default function ProjectDetailPage() {
       }
     },
   });
-  /*   console.log(project); */
+
   const createSubMutation = useMutation({
     mutationFn: subprojectsService.create,
     onSuccess: () => {
@@ -536,7 +548,6 @@ export default function ProjectDetailPage() {
               <div>
                 <div className="text-sm font-medium text-white">
                   {sp.nombre}
-                  {console.log(sp)}
                 </div>
                 <div className="text-xs text-slate-500">
                   {sp.ubicacion || sp.encargado?.nombre}
