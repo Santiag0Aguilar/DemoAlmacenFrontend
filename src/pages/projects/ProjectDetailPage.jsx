@@ -113,6 +113,26 @@ function AttendanceTable({
   removeWorker,
 }) {
   const [rows, setRows] = useState({});
+  const [selectedWorker, setSelectedWorker] = useState(null);
+
+  const [horaEntradaGeneral, setHoraEntradaGeneral] = useState(null);
+  const [horaSalidaGeneral, setHoraSalidaGeneral] = useState(null);
+
+  const [showEntradaModal, setShowEntradaModal] = useState(false);
+  const [showSalidaModal, setShowSalidaModal] = useState(false);
+
+  const [tempHora, setTempHora] = useState("");
+  const formatHora = (iso) => {
+    if (!iso) return null;
+
+    const date = new Date(iso);
+
+    return date.toLocaleTimeString("es-MX", {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
+
   console.log(workers);
   const setEstado = (id, estado) => {
     setRows((r) => ({
@@ -127,7 +147,12 @@ function AttendanceTable({
     const asistencias = workers.map((w) => ({
       trabajadorId: w.trabajadorId,
       estado: rows[w.trabajadorId]?.estado || "PRESENTE",
-      horaEntrada: now.toISOString(),
+      horaEntrada:
+        rows[w.trabajadorId]?.horaEntrada ||
+        horaEntradaGeneral ||
+        now.toISOString(),
+
+      horaSalida: rows[w.trabajadorId]?.horaSalida || horaSalidaGeneral || null,
     }));
 
     onSubmit({
@@ -140,15 +165,34 @@ function AttendanceTable({
   const availableWorkers = workersAvailable.filter(
     (w) => !assignedIds.has(w.id),
   );
+
   return (
     <div className="card">
+      <div className="p-4 flex gap-3 border-b border-white/5">
+        <button
+          className="btn-secondary text-xs"
+          onClick={() => setShowEntradaModal(true)}
+        >
+          {horaEntradaGeneral
+            ? `Entrada: ${formatHora(horaEntradaGeneral)}`
+            : "Seleccionar hora entrada"}
+        </button>
+
+        <button
+          className="btn-secondary text-xs"
+          onClick={() => setShowSalidaModal(true)}
+        >
+          {horaSalidaGeneral
+            ? `Salida: ${formatHora(horaSalidaGeneral)}`
+            : "Seleccionar hora salida"}
+        </button>
+      </div>
       {/* Asignar trabajador */}
       <div className="px-5 py-4 border-b border-white/5">
         <h2 className="text-sm font-semibold text-slate-300">
           Asignar trabajador
         </h2>
       </div>
-
       <div className="p-4 flex gap-2 border-b border-white/5">
         <select
           className="input flex-1"
@@ -166,55 +210,166 @@ function AttendanceTable({
           ))}
         </select>
       </div>
-
       {/* Asistencia */}
       <div className="px-5 py-4 border-b border-white/5">
         <h2 className="text-sm font-semibold text-slate-300">
           Asistencia de hoy
         </h2>
       </div>
-
       <div className="divide-y divide-white/5">
-        {workers.map((w) => (
-          <div
-            key={w.id}
-            className="px-5 py-3 flex justify-between items-center"
-          >
-            <div>
-              <div className="text-sm">{w.trabajador.nombre}</div>
-              <div className="text-xs text-slate-500">
-                {w.trabajador.identificador}
+        {workers.map((w) => {
+          const estadoActual = rows[w.trabajadorId]?.estado || "PRESENTE";
+
+          return (
+            <div
+              key={w.id}
+              className="px-5 py-3 flex justify-between items-center"
+            >
+              <div>
+                <div className="text-sm">{w.trabajador.nombre}</div>
+                <div className="text-xs text-slate-500">
+                  {w.trabajador.identificador}
+                </div>
+              </div>
+
+              <div className="flex gap-3 items-center">
+                <select
+                  className="input w-32"
+                  value={rows[w.trabajadorId]?.estado || "PRESENTE"}
+                  onChange={(e) => setEstado(w.trabajadorId, e.target.value)}
+                >
+                  <option value="PRESENTE">Presente</option>
+                  <option value="FALTA">Falta</option>
+                  <option value="EXTRA">EXTRA</option>
+                  <option value="RETARDO">Retardo</option>
+                  <option value="PERMISO">Permiso</option>
+                  <option value="VACACIONES">Vacaciones</option>
+                </select>
+
+                {estadoActual === "EXTRA" && (
+                  <button
+                    className="btn-secondary text-xs"
+                    onClick={() => {
+                      setSelectedWorker(w.trabajadorId);
+                      setShowSalidaModal(true);
+                    }}
+                  >
+                    {rows[w.trabajadorId]?.horaSalida
+                      ? `Salida: ${formatHora(rows[w.trabajadorId].horaSalida)}`
+                      : "Hora salida trabajador"}
+                  </button>
+                )}
+
+                {estadoActual === "RETARDO" && (
+                  <button
+                    className="btn-secondary text-xs"
+                    onClick={() =>
+                      setRows((r) => ({
+                        ...r,
+                        [w.trabajadorId]: {
+                          ...r[w.trabajadorId],
+                          horaEntrada: new Date().toISOString(),
+                        },
+                      }))
+                    }
+                  >
+                    Hora entrada trabajador
+                  </button>
+                )}
+
+                <button
+                  className="text-red-400 text-xs hover:text-red-300"
+                  onClick={() => removeWorker(w.trabajadorId)}
+                >
+                  Quitar
+                </button>
               </div>
             </div>
-
-            <div className="flex gap-3 items-center">
-              <select
-                className="input w-32"
-                onChange={(e) => setEstado(w.trabajadorId, e.target.value)}
-              >
-                <option value="PRESENTE">Presente</option>
-                <option value="FALTA">Falta</option>
-                <option value="RETARDO">Retardo</option>
-                <option value="PERMISO">Permiso</option>
-                <option value="VACACIONES">Vacaciones</option>
-              </select>
-
-              <button
-                className="text-red-400 text-xs hover:text-red-300"
-                onClick={() => removeWorker(w.trabajadorId)}
-              >
-                Quitar
-              </button>
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
-
       <div className="p-4">
         <button className="btn-primary w-full justify-center" onClick={submit}>
           Guardar asistencia
         </button>
       </div>
+      <Modal
+        open={showEntradaModal}
+        onClose={() => setShowEntradaModal(false)}
+        title="Seleccionar hora de entrada"
+      >
+        <div className="space-y-4">
+          <input
+            type="time"
+            className="input w-full"
+            value={tempHora}
+            onChange={(e) => setTempHora(e.target.value)}
+          />
+
+          <button
+            className="btn-primary w-full"
+            onClick={() => {
+              const now = new Date();
+              const [h, m] = tempHora.split(":");
+
+              now.setHours(h);
+              now.setMinutes(m);
+
+              setHoraEntradaGeneral(now.toISOString());
+              setTempHora("");
+              setShowEntradaModal(false);
+            }}
+          >
+            Guardar hora
+          </button>
+        </div>
+      </Modal>
+      <Modal
+        open={showSalidaModal}
+        onClose={() => setShowSalidaModal(false)}
+        title="Seleccionar hora de salida"
+      >
+        <div className="space-y-4">
+          <input
+            type="time"
+            className="input w-full"
+            value={tempHora}
+            onChange={(e) => setTempHora(e.target.value)}
+          />
+
+          <button
+            className="btn-primary w-full"
+            onClick={() => {
+              const now = new Date();
+              const [h, m] = tempHora.split(":");
+
+              now.setHours(h);
+              now.setMinutes(m);
+
+              const horaISO = now.toISOString();
+
+              if (selectedWorker) {
+                setRows((r) => ({
+                  ...r,
+                  [selectedWorker]: {
+                    ...r[selectedWorker],
+                    horaSalida: horaISO,
+                  },
+                }));
+
+                setSelectedWorker(null);
+              } else {
+                setHoraSalidaGeneral(horaISO);
+              }
+
+              setTempHora("");
+              setShowSalidaModal(false);
+            }}
+          >
+            Guardar hora
+          </button>
+        </div>
+      </Modal>
     </div>
   );
 }
