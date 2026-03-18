@@ -23,21 +23,43 @@ import clsx from "clsx";
 const navItems = [
   {
     group: "General",
-    items: [{ to: "/dashboard", icon: LayoutDashboard, label: "Dashboard" }],
+    items: [
+      {
+        to: "/dashboard",
+        icon: LayoutDashboard,
+        label: "Dashboard",
+        roles: ["ADMIN"],
+      },
+    ],
   },
   {
     group: "Herramientas",
     items: [
       { to: "/tools", icon: Wrench, label: "Catálogo" },
       { to: "/assignments", icon: ClipboardList, label: "Asignaciones" },
-      { to: "/incidents", icon: AlertTriangle, label: "Incidencias" },
+      {
+        to: "/incidents",
+        icon: AlertTriangle,
+        label: "Incidencias",
+        roles: ["ADMIN", "ENCARGADO"],
+      },
     ],
   },
   {
     group: "Proyectos",
     items: [
-      { to: "/clients", icon: Building2, label: "Clientes" },
-      { to: "/projects", icon: FolderKanban, label: "Proyectos" },
+      {
+        to: "/clients",
+        icon: Building2,
+        label: "Clientes",
+        roles: ["ADMIN"],
+      },
+      {
+        to: "/projects",
+        icon: FolderKanban,
+        label: "Proyectos",
+        roles: ["ADMIN", "ENCARGADO"],
+      },
     ],
   },
   {
@@ -47,13 +69,13 @@ const navItems = [
         to: "/workers",
         icon: Users,
         label: "Trabajadores",
-        roles: ["ADMIN", "ENCARGADO"],
+        roles: ["ADMIN"],
       },
       {
         to: "/finance",
         icon: DollarSign,
         label: "Finanzas",
-        roles: ["ADMIN", "ENCARGADO"],
+        roles: ["ADMIN"],
       },
     ],
   },

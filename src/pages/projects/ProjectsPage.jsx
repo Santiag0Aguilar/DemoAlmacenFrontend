@@ -184,7 +184,7 @@ export default function ProjectsPage() {
           <h1 className="page-title">Proyectos</h1>
           <p className="page-subtitle">{projects.length} proyectos</p>
         </div>
-        {hasRole("ADMIN", "ENCARGADO") && (
+        {hasRole("ADMIN") && (
           <button className="btn-primary" onClick={() => setShowCreate(true)}>
             <Plus size={15} /> Nuevo proyecto
           </button>
