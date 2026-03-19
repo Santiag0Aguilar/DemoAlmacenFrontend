@@ -71,12 +71,6 @@ const navItems = [
         label: "Trabajadores",
         roles: ["ADMIN"],
       },
-      {
-        to: "/finance",
-        icon: DollarSign,
-        label: "Finanzas",
-        roles: ["ADMIN"],
-      },
     ],
   },
 ];
