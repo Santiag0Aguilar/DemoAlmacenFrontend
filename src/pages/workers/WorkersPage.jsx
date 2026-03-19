@@ -31,9 +31,6 @@ function CreateUserForm({ onSubmit, isLoading }) {
     role: "TRABAJADOR",
     identificador: "",
     telefono: "",
-    curp: "",
-    social_security_number: "",
-    rfc: "",
   });
   const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
 
