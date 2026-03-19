@@ -203,7 +203,7 @@ export default function DashboardPage() {
         />
         <KpiCard
           label="Total de trabajadores"
-          value={details.activeUsersCount}
+          value={details.trabajadoresActivos}
           sub="Personal activo"
           icon={Wrench}
           color="blue"
