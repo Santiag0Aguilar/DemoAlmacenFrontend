@@ -159,6 +159,7 @@ export default function DashboardPage() {
   }
 
   const { tools = {}, alerts = {}, details = {} } = data || {};
+  console.log("Dashboard data:", data);
   const totalTools = Object.values(tools).reduce((a, b) => a + b, 0);
 
   return (
@@ -201,11 +202,11 @@ export default function DashboardPage() {
           color={alerts.incidentesSinResolver > 0 ? "yellow" : "green"}
         />
         <KpiCard
-          label="Proyectos c/ desviación"
-          value={alerts.proyectosConDesviacion}
-          sub="Sobre presupuesto"
-          icon={TrendingUp}
-          color={alerts.proyectosConDesviacion > 0 ? "red" : "green"}
+          label="Total de trabajadores"
+          value={details.activeUsersCount}
+          sub="Personal activo"
+          icon={Wrench}
+          color="blue"
         />
       </div>
 
@@ -253,14 +254,6 @@ export default function DashboardPage() {
                 text="Incidencias sin resolver"
                 count={alerts.incidentesSinResolver}
                 color="yellow"
-              />
-            )}
-            {alerts.proyectosConDesviacion > 0 && (
-              <AlertRow
-                icon={TrendingUp}
-                text="Proyectos con desviación presupuestal"
-                count={alerts.proyectosConDesviacion}
-                color="orange"
               />
             )}
             {alerts.subproyectosRetrasados > 0 && (

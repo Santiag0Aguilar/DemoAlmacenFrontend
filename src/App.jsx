@@ -17,7 +17,7 @@ import ProjectDetailPage from "@/pages/projects/ProjectDetailPage";
 import SubprojectDetailPage from "@/pages/projects/SubprojectDetailPage";
 import WorkersPage from "@/pages/workers/WorkersPage";
 import WorkerDetailPage from "@/pages/workers/WorkerDetailPage";
-import FinancePage from "@/pages/finance/FinancePage";
+
 import ClientsPage from "@/pages/projects/ClientsPage";
 import NotFoundPage from "@/pages/NotFoundPage";
 
@@ -132,16 +132,6 @@ export default function App() {
             element={
               <PrivateRoute roles={["ADMIN", "ENCARGADO"]}>
                 <WorkerDetailPage />
-              </PrivateRoute>
-            }
-          />
-
-          {/* Finanzas - solo ADMIN y ENCARGADO */}
-          <Route
-            path="finance"
-            element={
-              <PrivateRoute roles={["ADMIN", "ENCARGADO"]}>
-                <FinancePage />
               </PrivateRoute>
             }
           />
