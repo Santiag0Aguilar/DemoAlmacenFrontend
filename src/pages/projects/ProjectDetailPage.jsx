@@ -179,7 +179,7 @@ function AttendanceTable({
   const availableWorkers = workersAvailable.filter(
     (w) => !assignedIds.has(w.id),
   );
-
+  const today = new Date().toLocaleDateString("es-MX", { dateStyle: "long" });
   return (
     <div className="card">
       <div className="p-4 flex gap-3 border-b border-white/5">
@@ -228,7 +228,7 @@ function AttendanceTable({
       {/* Asistencia */}
       <div className="px-5 py-4 border-b border-white/5">
         <h2 className="text-sm font-semibold text-slate-300">
-          Asistencia de hoy
+          Asistencia de hoy {today}
         </h2>
       </div>
       <div className="divide-y divide-white/5">
@@ -255,10 +255,6 @@ function AttendanceTable({
                 >
                   <option value="PRESENTE">Presente</option>
                   <option value="FALTA">Falta</option>
-                  <option value="EXTRA">EXTRA</option>
-                  <option value="RETARDO">Retardo</option>
-                  <option value="PERMISO">Permiso</option>
-                  <option value="VACACIONES">Vacaciones</option>
                 </select>
 
                 {estadoActual === "EXTRA" && (
