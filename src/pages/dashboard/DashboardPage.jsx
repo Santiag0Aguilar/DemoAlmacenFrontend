@@ -160,8 +160,8 @@ export default function DashboardPage() {
 
   const { tools = {}, alerts = {}, details = {} } = data || {};
   console.log("Dashboard data:", data);
-  const totalTools = Object.values(tools).reduce((a, b) => a + b, 0);
-
+  const totalTools = tools.ACTIVA || 0;
+  const totalConsumables = tools.STOCK || 0;
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Header */}
@@ -184,8 +184,15 @@ export default function DashboardPage() {
           label="Herramientas totales"
           value={totalTools}
           sub={`${tools.EN_PRESTAMO || 0} en préstamo`}
-          icon={Package}
+          icon={Wrench}
           color="orange"
+        />
+        <KpiCard
+          label="Consumibles totales"
+          value={totalConsumables}
+          sub={`${tools.SIN_STOCK || 0} sin stock`}
+          icon={Package}
+          color="blue"
         />
         <KpiCard
           label="Préstamos vencidos"
@@ -200,13 +207,6 @@ export default function DashboardPage() {
           sub="Sin resolver"
           icon={AlertTriangle}
           color={alerts.incidentesSinResolver > 0 ? "yellow" : "green"}
-        />
-        <KpiCard
-          label="Total de trabajadores"
-          value={details.trabajadoresActivos}
-          sub="Personal activo"
-          icon={Wrench}
-          color="blue"
         />
       </div>
 
@@ -224,6 +224,12 @@ export default function DashboardPage() {
                 {tools.ACTIVA || 0}
               </div>
               <div className="text-xs text-slate-600">Disponibles</div>
+            </div>
+            <div className="text-center">
+              <div className="text-lg font-bold text-emerald-400">
+                {tools.STOCK || 0}
+              </div>
+              <div className="text-xs text-slate-600">Stock</div>
             </div>
             <div className="text-center">
               <div className="text-lg font-bold text-red-400">
