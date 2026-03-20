@@ -5,13 +5,14 @@ import {
   projectsService,
   subprojectsService,
   projectWorkersService,
-  attendanceService,
+  assignmentsService,
 } from "@/services";
 import { useAuthStore } from "@/store/authStore";
 import { Loader2, Plus, ChevronRight } from "lucide-react";
 import { useState } from "react";
 import Modal from "@/components/ui/Modal";
 import toast from "react-hot-toast";
+import { data } from "autoprefixer";
 
 function SubprojectForm({ proyectoId, onSubmit, isLoading }) {
   const { data: managers = [] } = useQuery({
@@ -104,284 +105,6 @@ function SubprojectForm({ proyectoId, onSubmit, isLoading }) {
   );
 }
 
-function AttendanceTable({
-  workers,
-  workersAvailable,
-  encargadoId,
-  onSubmit,
-  assignWorker,
-  removeWorker,
-}) {
-  const [rows, setRows] = useState({});
-  const [selectedWorker, setSelectedWorker] = useState(null);
-
-  const [horaEntradaGeneral, setHoraEntradaGeneral] = useState(null);
-  const [horaSalidaGeneral, setHoraSalidaGeneral] = useState(null);
-
-  const [showEntradaModal, setShowEntradaModal] = useState(false);
-  const [showSalidaModal, setShowSalidaModal] = useState(false);
-
-  const [tempHora, setTempHora] = useState("");
-  const formatHora = (iso) => {
-    if (!iso) return null;
-
-    const date = new Date(iso);
-
-    return date.toLocaleTimeString("es-MX", {
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  };
-
-  const setEstado = (id, estado) => {
-    setRows((r) => {
-      const prev = r[id] || {};
-
-      const newRow = { ...prev, estado };
-
-      // limpiar horas personalizadas si ya no aplica
-      if (estado !== "EXTRA") {
-        delete newRow.horaSalida;
-      }
-
-      if (estado !== "RETARDO") {
-        delete newRow.horaEntrada;
-      }
-
-      return {
-        ...r,
-        [id]: newRow,
-      };
-    });
-  };
-
-  const submit = () => {
-    const now = new Date();
-
-    const asistencias = workers.map((w) => ({
-      trabajadorId: w.trabajadorId,
-      estado: rows[w.trabajadorId]?.estado || "PRESENTE",
-      horaEntrada:
-        rows[w.trabajadorId]?.horaEntrada ||
-        horaEntradaGeneral ||
-        now.toISOString(),
-
-      horaSalida: rows[w.trabajadorId]?.horaSalida || horaSalidaGeneral || null,
-    }));
-
-    onSubmit({
-      fecha: now.toISOString().split("T")[0],
-      encargadoId,
-      asistencias,
-    });
-  };
-  const assignedIds = new Set(workers.map((w) => w.trabajadorId));
-  const availableWorkers = workersAvailable.filter(
-    (w) => !assignedIds.has(w.id),
-  );
-  const today = new Date().toLocaleDateString("es-MX", { dateStyle: "long" });
-  return (
-    <div className="card">
-      <div className="p-4 flex gap-3 border-b border-white/5">
-        <button
-          className="btn-secondary text-xs"
-          onClick={() => setShowEntradaModal(true)}
-        >
-          {horaEntradaGeneral
-            ? `Entrada: ${formatHora(horaEntradaGeneral)}`
-            : "Seleccionar hora entrada"}
-        </button>
-
-        <button
-          className="btn-secondary text-xs"
-          onClick={() => setShowSalidaModal(true)}
-        >
-          {horaSalidaGeneral
-            ? `Salida: ${formatHora(horaSalidaGeneral)}`
-            : "Seleccionar hora salida"}
-        </button>
-      </div>
-      {/* Asignar trabajador */}
-      <div className="px-5 py-4 border-b border-white/5">
-        <h2 className="text-sm font-semibold text-slate-300">
-          Asignar trabajador
-        </h2>
-      </div>
-      <div className="p-4 flex gap-2 border-b border-white/5">
-        <select
-          className="input flex-1"
-          onChange={(e) => assignWorker(e.target.value)}
-          defaultValue=""
-        >
-          <option value="" disabled>
-            Seleccionar trabajador
-          </option>
-
-          {availableWorkers.map((w) => (
-            <option key={w.id} value={w.id}>
-              {w.nombre}
-              {console.log(w)}
-            </option>
-          ))}
-        </select>
-      </div>
-      {/* Asistencia */}
-      <div className="px-5 py-4 border-b border-white/5">
-        <h2 className="text-sm font-semibold text-slate-300">
-          Asistencia de hoy {today}
-        </h2>
-      </div>
-      <div className="divide-y divide-white/5">
-        {workers.map((w) => {
-          const estadoActual = rows[w.trabajadorId]?.estado || "PRESENTE";
-
-          return (
-            <div
-              key={w.id}
-              className="px-5 py-3 flex justify-between items-center"
-            >
-              <div>
-                <div className="text-sm">{w.trabajador.nombre}</div>
-                <div className="text-xs text-slate-500">
-                  {w.trabajador.identificador}
-                </div>
-              </div>
-
-              <div className="flex gap-3 items-center">
-                <select
-                  className="input w-32"
-                  value={rows[w.trabajadorId]?.estado || "PRESENTE"}
-                  onChange={(e) => setEstado(w.trabajadorId, e.target.value)}
-                >
-                  <option value="PRESENTE">Presente</option>
-                  <option value="FALTA">Falta</option>
-                </select>
-
-                {estadoActual === "EXTRA" && (
-                  <button
-                    className="btn-secondary text-xs"
-                    onClick={() => {
-                      setSelectedWorker(w.trabajadorId);
-                      setShowSalidaModal(true);
-                    }}
-                  >
-                    {rows[w.trabajadorId]?.horaSalida
-                      ? `Salida: ${formatHora(rows[w.trabajadorId].horaSalida)}`
-                      : "Hora salida trabajador"}
-                  </button>
-                )}
-
-                {estadoActual === "RETARDO" && (
-                  <button
-                    className="btn-secondary text-xs"
-                    onClick={() => {
-                      setSelectedWorker(w.trabajadorId);
-                      setShowEntradaModal(true);
-                    }}
-                  >
-                    {rows[w.trabajadorId]?.horaEntrada
-                      ? `Entrada: ${formatHora(rows[w.trabajadorId].horaEntrada)}`
-                      : "Hora entrada trabajador"}
-                  </button>
-                )}
-
-                <button
-                  className="text-red-400 text-xs hover:text-red-300"
-                  onClick={() => removeWorker(w.trabajadorId)}
-                >
-                  Quitar
-                </button>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-      <div className="p-4">
-        <button className="btn-primary w-full justify-center" onClick={submit}>
-          Guardar asistencia
-        </button>
-      </div>
-      <Modal
-        open={showEntradaModal}
-        onClose={() => setShowEntradaModal(false)}
-        title="Seleccionar hora de entrada"
-      >
-        <div className="space-y-4">
-          <input
-            type="time"
-            className="input w-full"
-            value={tempHora}
-            onChange={(e) => setTempHora(e.target.value)}
-          />
-
-          <button
-            className="btn-primary w-full"
-            onClick={() => {
-              const now = new Date();
-              const [h, m] = tempHora.split(":");
-
-              now.setHours(h);
-              now.setMinutes(m);
-
-              setHoraEntradaGeneral(now.toISOString());
-              setTempHora("");
-              setShowEntradaModal(false);
-            }}
-          >
-            Guardar hora
-          </button>
-        </div>
-      </Modal>
-      <Modal
-        open={showSalidaModal}
-        onClose={() => setShowSalidaModal(false)}
-        title="Seleccionar hora de salida"
-      >
-        <div className="space-y-4">
-          <input
-            type="time"
-            className="input w-full"
-            value={tempHora}
-            onChange={(e) => setTempHora(e.target.value)}
-          />
-
-          <button
-            className="btn-primary w-full"
-            onClick={() => {
-              const now = new Date();
-              const [h, m] = tempHora.split(":");
-
-              now.setHours(h);
-              now.setMinutes(m);
-
-              const horaISO = now.toISOString();
-
-              if (selectedWorker) {
-                setRows((r) => ({
-                  ...r,
-                  [selectedWorker]: {
-                    ...r[selectedWorker],
-                    horaSalida: horaISO,
-                  },
-                }));
-
-                setSelectedWorker(null);
-              } else {
-                setHoraSalidaGeneral(horaISO);
-              }
-
-              setTempHora("");
-              setShowSalidaModal(false);
-            }}
-          >
-            Guardar hora
-          </button>
-        </div>
-      </Modal>
-    </div>
-  );
-}
-
 export default function ProjectDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -394,7 +117,11 @@ export default function ProjectDetailPage() {
     queryKey: ["project", id],
     queryFn: () => projectsService.getById(id),
   });
-
+  const { data: assignments = [] } = useQuery({
+    queryKey: ["assignments", id],
+    queryFn: () => assignmentsService.getByProject(id),
+  });
+  console.log(assignments);
   const { data: workers = [] } = useQuery({
     queryKey: ["project-workers", id],
     queryFn: () => projectWorkersService.getByProject(id),
@@ -413,6 +140,17 @@ export default function ProjectDetailPage() {
       ),
   });
 
+  const assignmentsByResourceStatus = assignments.reduce((acc, a) => {
+    const status = a.resource?.estado || "SIN_ESTADO";
+
+    if (!acc[status]) {
+      acc[status] = [];
+    }
+
+    acc[status].push(a);
+    return acc;
+  }, {});
+  console.log(assignmentsByResourceStatus);
   const assignWorkerMutation = useMutation({
     mutationFn: (trabajadorId) =>
       projectWorkersService.assign(id, { trabajadorId }),
@@ -527,47 +265,66 @@ export default function ProjectDetailPage() {
         </div>
       </div>
 
-      {/* Subprojects */}
-      <div className="card">
-        <div className="px-5 py-4 border-b border-white/5">
-          <h2 className="font-semibold text-slate-300 text-sm">
-            Contratos ({project.Contracts?.length || 0})
-          </h2>
-        </div>
-        <div className="divide-y divide-white/5">
-          {project.Contracts?.map((sp) => (
-            <div
-              key={sp.id}
-              className="px-5 py-3.5 flex items-center justify-between hover:bg-white/[0.02] cursor-pointer"
-              onClick={() => navigate(`/subprojects/${sp.id}`)}
-            >
-              <div>
-                <div className="text-sm font-medium text-white">
-                  {sp.nombre}
-                </div>
-                <div className="text-xs text-slate-500">
-                  {sp.ubicacion || sp.encargado?.nombre}
-                </div>
-              </div>
-              <div className="flex items-center gap-3">
-                <span className="text-xs text-slate-600">
-                  {sp._count?.tasks || 0} tareas
-                </span>
-                <span
-                  className={`badge badge-${sp.estado === "ACTIVO" ? "green" : sp.estado === "COMPLETADO" ? "gray" : "yellow"}`}
-                >
-                  {sp.estado}
-                </span>
-                <ChevronRight size={14} className="text-slate-600" />
-              </div>
+      {/* asignaciones */}
+      <div className="space-y-6">
+        {Object.entries(assignmentsByResourceStatus).map(([status, items]) => (
+          <div key={status} className="card">
+            {/* Header */}
+            <div className="px-5 py-4 border-b border-white/5 flex justify-between">
+              <h2 className="font-semibold text-slate-300 text-sm">
+                {status} ({items.length})
+              </h2>
             </div>
-          ))}
-          {!project.Contracts?.length && (
-            <p className="px-5 py-8 text-center text-slate-600 text-sm">
-              Sin contratos aún
-            </p>
-          )}
-        </div>
+
+            {/* Table */}
+            <div className="divide-y divide-white/5">
+              {items.map((a) => (
+                <div
+                  key={a.id}
+                  className="px-5 py-3.5 flex items-center justify-between hover:bg-white/[0.02]"
+                >
+                  <div>
+                    <div className="text-sm font-medium text-white">
+                      {a.trabajador?.nombre || "Sin trabajador"}
+                    </div>
+
+                    <div className="text-xs text-slate-500">
+                      {a.resource?.nombre || "Sin herramienta"}
+                    </div>
+
+                    <div className="text-xs text-slate-500">
+                      Fecha límite:{" "}
+                      {a.fechaLimite
+                        ? new Date(a.fechaLimite).toLocaleDateString()
+                        : "Sin fecha"}
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    {/* Estado de asignación */}
+                    <span
+                      className={`badge badge-${
+                        a.estado === "ACTIVA"
+                          ? "green"
+                          : a.estado === "DEVUELTA"
+                            ? "gray"
+                            : "yellow"
+                      }`}
+                    >
+                      {a.estado}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+
+        {!assignments.length && (
+          <p className="text-center text-slate-600 text-sm">
+            Sin asignaciones aún
+          </p>
+        )}
       </div>
 
       <Modal
@@ -581,15 +338,6 @@ export default function ProjectDetailPage() {
           isLoading={createSubMutation.isPending}
         />
       </Modal>
-
-      <AttendanceTable
-        workers={workers}
-        workersAvailable={workersAvailable}
-        encargadoId={user?.id}
-        onSubmit={attendanceMutation.mutate}
-        assignWorker={assignWorkerMutation.mutate}
-        removeWorker={removeWorkerMutation.mutate}
-      />
     </div>
   );
 }

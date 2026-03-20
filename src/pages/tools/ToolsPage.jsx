@@ -11,7 +11,9 @@ import clsx from "clsx";
 
 const STATUS_BADGE = {
   ACTIVA: "badge-green",
+  STOCK: "badge-green",
   EN_PRESTAMO: "badge-orange",
+  SIN_STOCK: "badge-orange",
   DANADA: "badge-red",
   PERDIDA: "badge-gray",
 };
@@ -21,6 +23,8 @@ const STATUS_LABEL = {
   EN_PRESTAMO: "En préstamo",
   DANADA: "Dañada",
   PERDIDA: "Perdida",
+  STOCK: "En stock",
+  SIN_STOCK: "Stock agotado",
 };
 
 function ToolForm({ onSubmit, isLoading }) {
