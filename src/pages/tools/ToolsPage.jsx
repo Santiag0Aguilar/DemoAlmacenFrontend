@@ -248,6 +248,8 @@ export default function ToolsPage() {
         >
           <option value="">Todos los estados</option>
           <option value="ACTIVA">Disponible</option>
+          <option value="STOCK">Stock</option>
+          <option value="SIN_STOCK">Sin stock</option>
           <option value="EN_PRESTAMO">En préstamo</option>
           <option value="DANADA">Dañada</option>
           <option value="PERDIDA">Perdida</option>
