@@ -121,6 +121,8 @@ export default function ProjectDetailPage() {
     queryKey: ["assignments", id],
     queryFn: () => assignmentsService.getByProject(id),
   });
+
+  console.log(assignments);
   console.log(assignments);
   const { data: workers = [] } = useQuery({
     queryKey: ["project-workers", id],
@@ -140,8 +142,8 @@ export default function ProjectDetailPage() {
       ),
   });
 
-  const assignmentsByResourceStatus = assignments.reduce((acc, a) => {
-    const status = a.resource?.estado || "SIN_ESTADO";
+  const assignmentsByStatus = assignments.reduce((acc, a) => {
+    const status = a.estado || "SIN_ESTADO";
 
     if (!acc[status]) {
       acc[status] = [];
@@ -150,7 +152,7 @@ export default function ProjectDetailPage() {
     acc[status].push(a);
     return acc;
   }, {});
-  console.log(assignmentsByResourceStatus);
+  console.log(assignmentsByStatus);
   const assignWorkerMutation = useMutation({
     mutationFn: (trabajadorId) =>
       projectWorkersService.assign(id, { trabajadorId }),
@@ -243,31 +245,9 @@ export default function ProjectDetailPage() {
         )}
       </div>
 
-      {/* Budget */}
-      <div className="card p-5">
-        <div className="flex justify-between items-center mb-2">
-          <span className="text-sm text-slate-400">Presupuesto utilizado</span>
-          <span
-            className={`font-mono text-sm font-bold ${pct > 100 ? "text-red-400" : "text-brand-400"}`}
-          >
-            {pct}%
-          </span>
-        </div>
-        <div className="h-2 bg-white/5 rounded-full overflow-hidden">
-          <div
-            className={`h-full rounded-full ${pct > 100 ? "bg-red-500" : "bg-brand-500"}`}
-            style={{ width: `${Math.min(pct, 100)}%` }}
-          />
-        </div>
-        <div className="flex justify-between text-xs text-slate-600 mt-1">
-          <span>Gastado: ${spent.toLocaleString("es-MX")}</span>
-          <span>Total: ${budget.toLocaleString("es-MX")}</span>
-        </div>
-      </div>
-
       {/* asignaciones */}
       <div className="space-y-6">
-        {Object.entries(assignmentsByResourceStatus).map(([status, items]) => (
+        {Object.entries(assignmentsByStatus).map(([status, items]) => (
           <div key={status} className="card">
             {/* Header */}
             <div className="px-5 py-4 border-b border-white/5 flex justify-between">
@@ -291,6 +271,23 @@ export default function ProjectDetailPage() {
                     <div className="text-xs text-slate-500">
                       {a.resource?.nombre || "Sin herramienta"}
                     </div>
+
+                    <div className="text-xs text-slate-500">
+                      Estado de recurso:{" "}
+                      {a.resource?.estado || "Sin estado de recurso"}
+                    </div>
+
+                    {a?.quantity && (
+                      <div className="text-xs text-slate-500">
+                        Cantidad asignada: {a.quantity}
+                      </div>
+                    )}
+
+                    {a?.resource?.stock && (
+                      <div className="text-xs text-slate-500">
+                        Stock disponible: {a.resource.stock}
+                      </div>
+                    )}
 
                     <div className="text-xs text-slate-500">
                       Fecha límite:{" "}

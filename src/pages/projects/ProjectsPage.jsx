@@ -237,34 +237,6 @@ export default function ProjectsPage() {
                   <span className="text-slate-400">{p.encargado?.nombre}</span>
                 </div>
 
-                {/* Budget bar */}
-                <div className="space-y-1.5">
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="text-slate-600">Presupuesto</span>
-                    <span
-                      className={clsx(
-                        "font-medium",
-                        isOver ? "text-red-400" : "text-slate-400",
-                      )}
-                    >
-                      {pct}% {isOver && "⚠️"}
-                    </span>
-                  </div>
-                  <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
-                    <div
-                      className={clsx(
-                        "h-full rounded-full transition-all",
-                        isOver ? "bg-red-500" : "bg-brand-500",
-                      )}
-                      style={{ width: `${Math.min(pct, 100)}%` }}
-                    />
-                  </div>
-                  <div className="flex justify-between text-xs text-slate-700">
-                    <span>${spent.toLocaleString("es-MX")}</span>
-                    <span>${budget.toLocaleString("es-MX")}</span>
-                  </div>
-                </div>
-
                 <div className="flex items-center justify-between mt-4">
                   <span className="text-xs text-slate-600">
                     {p._count?.Contracts || 0} contratos
