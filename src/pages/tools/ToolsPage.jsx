@@ -11,7 +11,9 @@ import clsx from "clsx";
 
 const STATUS_BADGE = {
   ACTIVA: "badge-green",
+  STOCK: "badge-green",
   EN_PRESTAMO: "badge-orange",
+  SIN_STOCK: "badge-orange",
   DANADA: "badge-red",
   PERDIDA: "badge-gray",
 };
@@ -21,6 +23,8 @@ const STATUS_LABEL = {
   EN_PRESTAMO: "En préstamo",
   DANADA: "Dañada",
   PERDIDA: "Perdida",
+  STOCK: "En stock",
+  SIN_STOCK: "Stock agotado",
 };
 
 function ToolForm({ onSubmit, isLoading }) {
@@ -244,6 +248,8 @@ export default function ToolsPage() {
         >
           <option value="">Todos los estados</option>
           <option value="ACTIVA">Disponible</option>
+          <option value="STOCK">Stock</option>
+          <option value="SIN_STOCK">Sin stock</option>
           <option value="EN_PRESTAMO">En préstamo</option>
           <option value="DANADA">Dañada</option>
           <option value="PERDIDA">Perdida</option>

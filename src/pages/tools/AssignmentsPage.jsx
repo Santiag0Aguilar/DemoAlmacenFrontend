@@ -332,7 +332,7 @@ export default function AssignmentsPage() {
                       </td>
                       {hasRole("ADMIN", "ENCARGADO") && (
                         <td>
-                          {a.estado === "ACTIVA" && (
+                          {a.estado === "ACTIVA" && a.tipo === "TOOL" && (
                             <button
                               className="btn-secondary text-xs py-1 px-2"
                               onClick={() =>

@@ -26,6 +26,8 @@ export const toolsService = {
 export const assignmentsService = {
   getAll: (params) =>
     api.get("/assignments", { params }).then((r) => r.data.data),
+  getByProject: (id) =>
+    api.get(`/assignments/byproject/${id}`).then((r) => r.data.data),
   getOverdue: () => api.get("/assignments/overdue").then((r) => r.data.data),
   create: (data) => api.post("/assignments", data).then((r) => r.data.data),
   returnTool: (id, data) =>
