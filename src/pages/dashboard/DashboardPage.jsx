@@ -229,13 +229,19 @@ export default function DashboardPage() {
               <div className="text-lg font-bold text-emerald-400">
                 {tools.STOCK || 0}
               </div>
-              <div className="text-xs text-slate-600">Stock</div>
+              <div className="text-xs text-slate-600">Con existencia</div>
             </div>
             <div className="text-center">
               <div className="text-lg font-bold text-red-400">
                 {(tools.DANADA || 0) + (tools.PERDIDA || 0)}
               </div>
               <div className="text-xs text-slate-600">No disponibles</div>
+            </div>
+            <div className="text-center">
+              <div className="text-lg font-bold text-red-400">
+                {tools.SIN_STOCK || 0}
+              </div>
+              <div className="text-xs text-slate-600">Sin existencia</div>
             </div>
           </div>
         </div>
