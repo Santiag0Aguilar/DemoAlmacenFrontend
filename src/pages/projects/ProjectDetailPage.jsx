@@ -121,6 +121,8 @@ export default function ProjectDetailPage() {
     queryKey: ["assignments", id],
     queryFn: () => assignmentsService.getByProject(id),
   });
+
+  console.log(assignments);
   console.log(assignments);
   const { data: workers = [] } = useQuery({
     queryKey: ["project-workers", id],
@@ -140,8 +142,8 @@ export default function ProjectDetailPage() {
       ),
   });
 
-  const assignmentsByResourceStatus = assignments.reduce((acc, a) => {
-    const status = a.resource?.estado || "SIN_ESTADO";
+  const assignmentsByStatus = assignments.reduce((acc, a) => {
+    const status = a.estado || "SIN_ESTADO";
 
     if (!acc[status]) {
       acc[status] = [];
@@ -150,7 +152,7 @@ export default function ProjectDetailPage() {
     acc[status].push(a);
     return acc;
   }, {});
-  console.log(assignmentsByResourceStatus);
+  console.log(assignmentsByStatus);
   const assignWorkerMutation = useMutation({
     mutationFn: (trabajadorId) =>
       projectWorkersService.assign(id, { trabajadorId }),
@@ -267,7 +269,7 @@ export default function ProjectDetailPage() {
 
       {/* asignaciones */}
       <div className="space-y-6">
-        {Object.entries(assignmentsByResourceStatus).map(([status, items]) => (
+        {Object.entries(assignmentsByStatus).map(([status, items]) => (
           <div key={status} className="card">
             {/* Header */}
             <div className="px-5 py-4 border-b border-white/5 flex justify-between">
@@ -290,6 +292,11 @@ export default function ProjectDetailPage() {
 
                     <div className="text-xs text-slate-500">
                       {a.resource?.nombre || "Sin herramienta"}
+                    </div>
+
+                    <div className="text-xs text-slate-500">
+                      Estado de recurso:{" "}
+                      {a.resource?.estado || "Sin estado de recurso"}
                     </div>
 
                     <div className="text-xs text-slate-500">
