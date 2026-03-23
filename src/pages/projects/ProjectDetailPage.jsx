@@ -245,28 +245,6 @@ export default function ProjectDetailPage() {
         )}
       </div>
 
-      {/* Budget */}
-      <div className="card p-5">
-        <div className="flex justify-between items-center mb-2">
-          <span className="text-sm text-slate-400">Presupuesto utilizado</span>
-          <span
-            className={`font-mono text-sm font-bold ${pct > 100 ? "text-red-400" : "text-brand-400"}`}
-          >
-            {pct}%
-          </span>
-        </div>
-        <div className="h-2 bg-white/5 rounded-full overflow-hidden">
-          <div
-            className={`h-full rounded-full ${pct > 100 ? "bg-red-500" : "bg-brand-500"}`}
-            style={{ width: `${Math.min(pct, 100)}%` }}
-          />
-        </div>
-        <div className="flex justify-between text-xs text-slate-600 mt-1">
-          <span>Gastado: ${spent.toLocaleString("es-MX")}</span>
-          <span>Total: ${budget.toLocaleString("es-MX")}</span>
-        </div>
-      </div>
-
       {/* asignaciones */}
       <div className="space-y-6">
         {Object.entries(assignmentsByStatus).map(([status, items]) => (
@@ -298,6 +276,18 @@ export default function ProjectDetailPage() {
                       Estado de recurso:{" "}
                       {a.resource?.estado || "Sin estado de recurso"}
                     </div>
+
+                    {a?.quantity && (
+                      <div className="text-xs text-slate-500">
+                        Cantidad asignada: {a.quantity}
+                      </div>
+                    )}
+
+                    {a?.resource?.stock && (
+                      <div className="text-xs text-slate-500">
+                        Stock disponible: {a.resource.stock}
+                      </div>
+                    )}
 
                     <div className="text-xs text-slate-500">
                       Fecha límite:{" "}
