@@ -238,6 +238,7 @@ export default function WorkerDetailPage() {
     queryFn: () => usersService.getById(id),
   });
 
+  console.log(user);
   const updateMutation = useMutation({
     mutationFn: (data) => usersService.update(id, data),
     onSuccess: () => {
@@ -324,7 +325,7 @@ export default function WorkerDetailPage() {
                 key={a.id}
                 className="flex items-center justify-between text-xs py-2 border-b border-white/5"
               >
-                <span className="text-slate-300">{a.herramienta?.nombre}</span>
+                <span className="text-slate-300">{a.resource?.nombre}</span>
                 <span className="badge-orange">Activa</span>
               </div>
             ))}

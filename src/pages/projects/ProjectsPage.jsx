@@ -167,6 +167,18 @@ export default function ProjectsPage() {
     queryFn: projectsService.getAll,
   });
 
+  const statusMutation = useMutation({
+    mutationFn: ({ projectId, estado }) =>
+      projectsService.update(projectId, { estado }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["projects"] });
+      toast.success("Estado del proyecto actualizado");
+    },
+    onError: (e) => {
+      toast.error(e.response?.data?.message || "Error actualizando estado");
+    },
+  });
+
   const createMutation = useMutation({
     mutationFn: projectsService.create,
     onSuccess: () => {
