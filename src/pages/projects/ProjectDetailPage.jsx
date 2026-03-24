@@ -116,22 +116,40 @@ export default function ProjectDetailPage() {
   const { data: project, isLoading } = useQuery({
     queryKey: ["project", id],
     queryFn: () => projectsService.getById(id),
+    retry: false,
+  });
+
+  const statusMutation = useMutation({
+    mutationFn: ({ projectId, estado }) =>
+      projectsService.update(projectId, { estado }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["project", id] });
+      queryClient.invalidateQueries({ queryKey: ["projects"] });
+      toast.success("Estado del proyecto actualizado");
+    },
+    onError: (e) => {
+      toast.error(e.response?.data?.message || "Error actualizando estado");
+    },
   });
   const { data: assignments = [] } = useQuery({
     queryKey: ["assignments", id],
     queryFn: () => assignmentsService.getByProject(id),
+    enabled: !!project,
+    retry: false,
   });
 
-  console.log(assignments);
-  console.log(assignments);
   const { data: workers = [] } = useQuery({
     queryKey: ["project-workers", id],
     queryFn: () => projectWorkersService.getByProject(id),
+    enabled: !!project,
+    retry: false,
   });
 
   const { data: todayAttendance = [] } = useQuery({
     queryKey: ["attendance-today", id],
     queryFn: () => attendanceService.getToday(id),
+    enabled: !!project,
+    retry: false,
   });
 
   const { data: workersAvailable = [] } = useQuery({
@@ -227,6 +245,7 @@ export default function ProjectDetailPage() {
   const pct =
     budget > 0 ? Math.min(100, Math.round((spent / budget) * 100)) : 0;
 
+  console.log(project.estado);
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="page-header">
@@ -236,13 +255,38 @@ export default function ProjectDetailPage() {
             {project.cliente?.nombre}{" "}
             {project.ubicacion ? `· ${project.ubicacion}` : ""}
           </p>
+          {hasRole("ADMIN") && (
+            <div className="mt-2 flex items-center gap-2">
+              <span className="text-xs text-slate-400">Cambiar estado:</span>
+              <select
+                className="input input-xs"
+                value={project.estado}
+                onChange={(e) => {
+                  const next = e.target.value;
+                  const allowed = [
+                    "PLANEACION",
+                    "ACTIVO",
+                    "EN_PAUSA",
+                    "COMPLETADO",
+                    "CANCELADO",
+                  ];
+                  if (!allowed.includes(next)) {
+                    toast.error("Estado inválido");
+                    return;
+                  }
+                  statusMutation.mutate({ projectId: id, estado: next });
+                }}
+                disabled={statusMutation.isLoading}
+              >
+                <option value="PLANEACION">PLANEACION</option>
+                <option value="ACTIVO">ACTIVO</option>
+                <option value="EN_PAUSA">EN_PAUSA</option>
+                <option value="COMPLETADO">COMPLETADO</option>
+                <option value="CANCELADO">CANCELADO</option>
+              </select>
+            </div>
+          )}
         </div>
-        {hasRole("ADMIN", "ENCARGADO") && (
-          <button className="btn-primary" onClick={() => setShowCreate(true)}>
-            <Plus size={15} />
-            Nuevo subproyecto
-          </button>
-        )}
       </div>
 
       {/* asignaciones */}
@@ -324,17 +368,65 @@ export default function ProjectDetailPage() {
         )}
       </div>
 
-      <Modal
-        open={showCreate}
-        onClose={() => setShowCreate(false)}
-        title="Nuevo Subproyecto"
-      >
-        <SubprojectForm
-          proyectoId={id}
-          onSubmit={createSubMutation.mutate}
-          isLoading={createSubMutation.isPending}
-        />
-      </Modal>
+      {/* Trabajadores asignados */}
+      {project.estado !== "CANCELADO" && project.estado !== "COMPLETADO" && (
+        <div className="card">
+          <div className="px-5 py-4 border-b border-white/5">
+            <h2 className="font-semibold text-slate-300 text-sm">
+              Trabajadores asignados ({workers.length})
+            </h2>
+          </div>
+          <div className="p-4 flex gap-2 border-b border-white/5">
+            <select
+              className="input flex-1"
+              onChange={(e) => {
+                if (e.target.value) {
+                  assignWorkerMutation.mutate(e.target.value);
+                  e.target.value = ""; // Reset select
+                }
+              }}
+              defaultValue=""
+            >
+              <option value="" disabled>
+                Seleccionar trabajador
+              </option>
+              {workersAvailable
+                .filter((w) => !workers.some((aw) => aw.trabajadorId === w.id))
+                .map((w) => (
+                  <option key={w.id} value={w.id}>
+                    {w.nombre}
+                  </option>
+                ))}
+            </select>
+          </div>
+          <div className="divide-y divide-white/5">
+            {workers.map((w) => (
+              <div
+                key={w.id}
+                className="px-5 py-3 flex justify-between items-center"
+              >
+                <div>
+                  <div className="text-sm">{w.trabajador.nombre}</div>
+                  <div className="text-xs text-slate-500">
+                    {w.trabajador.identificador}
+                  </div>
+                </div>
+                <button
+                  className="text-red-400 text-xs hover:text-red-300"
+                  onClick={() => removeWorkerMutation.mutate(w.trabajadorId)}
+                >
+                  Quitar
+                </button>
+              </div>
+            ))}
+          </div>
+          {!workers.length && (
+            <p className="px-5 py-8 text-center text-slate-600 text-sm">
+              Sin trabajadores asignados
+            </p>
+          )}
+        </div>
+      )}
     </div>
   );
 }

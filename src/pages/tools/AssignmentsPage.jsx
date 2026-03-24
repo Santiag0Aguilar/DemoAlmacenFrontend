@@ -41,6 +41,25 @@ function AssignmentForm({ onSubmit, isLoading }) {
       [k]: e.target.value,
     }));
 
+  const handleTrabajadorChange = (e) => {
+    const trabajadorId = e.target.value;
+    setForm((f) => ({ ...f, trabajadorId }));
+
+    const selectedUser = users.find((u) => u.id === trabajadorId);
+    if (
+      selectedUser &&
+      selectedUser.projectAssignments &&
+      selectedUser.projectAssignments.length > 0
+    ) {
+      const activeAssignment = selectedUser.projectAssignments.find(
+        (pa) => pa.activo,
+      );
+      if (activeAssignment) {
+        setForm((f) => ({ ...f, proyectoId: activeAssignment.proyectoId }));
+      }
+    }
+  };
+
   const { data: resources = [] } = useQuery({
     queryKey: ["resources"],
     queryFn: () => toolsService.getAll(),
@@ -50,6 +69,8 @@ function AssignmentForm({ onSubmit, isLoading }) {
     queryKey: ["users", "TRABAJADOR"],
     queryFn: () => usersService.getAll({ role: "TRABAJADOR" }),
   });
+
+  console.log(users);
 
   const { data: projects = [] } = useQuery({
     queryKey: ["projects"],
@@ -135,7 +156,7 @@ function AssignmentForm({ onSubmit, isLoading }) {
         <select
           className="input"
           value={form.trabajadorId}
-          onChange={set("trabajadorId")}
+          onChange={handleTrabajadorChange}
           required
         >
           <option value="">Seleccionar trabajador...</option>
@@ -261,15 +282,17 @@ export default function AssignmentsPage() {
       </div>
 
       <div className="flex gap-2">
-        {["ACTIVA", "DEVUELTA", "VENCIDA", ""].map((s) => (
-          <button
-            key={s}
-            onClick={() => setFilter(s)}
-            className={`btn-secondary text-xs px-3 py-1.5 ${filter === s ? "!bg-brand-500/20 !border-brand-500/30 !text-brand-400" : ""}`}
-          >
-            {s || "Todos"}
-          </button>
-        ))}
+        {["ACTIVA", "DEVUELTA", "VENCIDA", "ENTREGADA", "INCIDENCIA", ""].map(
+          (s) => (
+            <button
+              key={s}
+              onClick={() => setFilter(s)}
+              className={`btn-secondary text-xs px-3 py-1.5 ${filter === s ? "!bg-brand-500/20 !border-brand-500/30 !text-brand-400" : ""}`}
+            >
+              {s || "Todos"}
+            </button>
+          ),
+        )}
       </div>
 
       <div className="card">
