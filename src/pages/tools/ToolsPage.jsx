@@ -187,6 +187,7 @@ export default function ToolsPage() {
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
+  const [typeFilter, setTypeFilter] = useState("");
   const [showCreate, setShowCreate] = useState(false);
 
   const { data: tools = [], isLoading } = useQuery({
@@ -198,6 +199,10 @@ export default function ToolsPage() {
       }),
   });
 
+  const filteredTools = tools.filter(
+    (t) => !typeFilter || t.tipo === typeFilter,
+  );
+  console.log(tools);
   const createMutation = useMutation({
     mutationFn: toolsService.create,
     onSuccess: () => {
@@ -216,7 +221,7 @@ export default function ToolsPage() {
         <div>
           <h1 className="page-title">Catálogo de Herramientas</h1>
           <p className="page-subtitle">
-            {tools.length} herramientas registradas
+            {filteredTools.length} herramientas registradas
           </p>
         </div>
         {hasRole("ADMIN", "ENCARGADO") && (
@@ -243,6 +248,15 @@ export default function ToolsPage() {
         </div>
         <select
           className="input w-40"
+          value={typeFilter}
+          onChange={(e) => setTypeFilter(e.target.value)}
+        >
+          <option value="">Todos los tipos</option>
+          <option value="TOOL">Herramienta</option>
+          <option value="CONSUMABLE">Consumible</option>
+        </select>
+        <select
+          className="input w-40"
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
         >
@@ -262,7 +276,7 @@ export default function ToolsPage() {
           <div className="flex items-center justify-center py-16 text-slate-500">
             <Loader2 size={20} className="animate-spin mr-2" /> Cargando...
           </div>
-        ) : tools.length === 0 ? (
+        ) : filteredTools.length === 0 ? (
           <div className="text-center py-16 text-slate-600">
             <Wrench size={32} className="mx-auto mb-3 opacity-30" />
             <p>No hay herramientas registradas</p>
@@ -282,7 +296,7 @@ export default function ToolsPage() {
                 </tr>
               </thead>
               <tbody>
-                {tools.map((tool) => {
+                {filteredTools.map((tool) => {
                   const active = tool.assignments?.[0];
                   return (
                     <tr
