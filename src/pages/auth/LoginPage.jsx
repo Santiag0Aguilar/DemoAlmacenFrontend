@@ -43,7 +43,8 @@ export default function LoginPage() {
             Humer
           </h1>
           <p className="text-slate-500 text-sm mt-1">
-            Sistema de gestión empresarial de Humer
+            Humer - Sistema de gestión de herramientas y proyectos de
+            construcción
           </p>
         </div>
 
