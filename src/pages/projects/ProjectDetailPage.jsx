@@ -1,12 +1,18 @@
 // src/pages/projects/ProjectDetailPage.jsx
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { projectsService, subprojectsService } from "@/services";
+import {
+  projectsService,
+  subprojectsService,
+  projectWorkersService,
+  assignmentsService,
+} from "@/services";
 import { useAuthStore } from "@/store/authStore";
 import { Loader2, Plus, ChevronRight } from "lucide-react";
 import { useState } from "react";
 import Modal from "@/components/ui/Modal";
 import toast from "react-hot-toast";
+import { data } from "autoprefixer";
 
 function SubprojectForm({ proyectoId, onSubmit, isLoading }) {
   const { data: managers = [] } = useQuery({
@@ -105,12 +111,111 @@ export default function ProjectDetailPage() {
   const { hasRole } = useAuthStore();
   const queryClient = useQueryClient();
   const [showCreate, setShowCreate] = useState(false);
+  const { user } = useAuthStore();
 
   const { data: project, isLoading } = useQuery({
     queryKey: ["project", id],
     queryFn: () => projectsService.getById(id),
+    retry: false,
   });
-  /*   console.log(project); */
+
+  const statusMutation = useMutation({
+    mutationFn: ({ projectId, estado }) =>
+      projectsService.update(projectId, { estado }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["project", id] });
+      queryClient.invalidateQueries({ queryKey: ["projects"] });
+      toast.success("Estado del proyecto actualizado");
+    },
+    onError: (e) => {
+      toast.error(e.response?.data?.message || "Error actualizando estado");
+    },
+  });
+  const { data: assignments = [] } = useQuery({
+    queryKey: ["assignments", id],
+    queryFn: () => assignmentsService.getByProject(id),
+    enabled: !!project,
+    retry: false,
+  });
+
+  const { data: workers = [] } = useQuery({
+    queryKey: ["project-workers", id],
+    queryFn: () => projectWorkersService.getByProject(id),
+    enabled: !!project,
+    retry: false,
+  });
+
+  const { data: todayAttendance = [] } = useQuery({
+    queryKey: ["attendance-today", id],
+    queryFn: () => attendanceService.getToday(id),
+    enabled: !!project,
+    retry: false,
+  });
+
+  const { data: workersAvailable = [] } = useQuery({
+    queryKey: ["workers"],
+    queryFn: () =>
+      import("@/services").then((s) =>
+        s.usersService.getAll({ role: "TRABAJADOR" }),
+      ),
+  });
+
+  const assignmentsByStatus = assignments.reduce((acc, a) => {
+    const status = a.estado || "SIN_ESTADO";
+
+    if (!acc[status]) {
+      acc[status] = [];
+    }
+
+    acc[status].push(a);
+    return acc;
+  }, {});
+  console.log(assignmentsByStatus);
+  const assignWorkerMutation = useMutation({
+    mutationFn: (trabajadorId) =>
+      projectWorkersService.assign(id, { trabajadorId }),
+
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["project-workers", id] });
+      toast.success("Trabajador asignado");
+    },
+
+    onError: (e) => {
+      toast.error(e.response?.data?.message || "Error asignando trabajador");
+    },
+  });
+
+  const removeWorkerMutation = useMutation({
+    mutationFn: (workerId) => projectWorkersService.remove(id, workerId),
+
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["project-workers", id] });
+      toast.success("Trabajador removido del proyecto");
+    },
+
+    onError: (e) => {
+      toast.error(e.response?.data?.message || "Error removiendo trabajador");
+    },
+  });
+  const attendanceMutation = useMutation({
+    mutationFn: (data) => attendanceService.create(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["attendance-today", id] });
+      toast.success("Asistencia guardada");
+    },
+    onError: (e) => {
+      const data = e.response?.data;
+
+      if (data?.errors?.length) {
+        data.errors.forEach((err) => {
+          toast.error(`${err.path}: ${err.msg}`);
+        });
+      } else {
+        toast.error(data?.message || "Error");
+      }
+    },
+  });
+
   const createSubMutation = useMutation({
     mutationFn: subprojectsService.create,
     onSuccess: () => {
@@ -140,6 +245,7 @@ export default function ProjectDetailPage() {
   const pct =
     budget > 0 ? Math.min(100, Math.round((spent / budget) * 100)) : 0;
 
+  console.log(project.estado);
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="page-header">
@@ -149,92 +255,178 @@ export default function ProjectDetailPage() {
             {project.cliente?.nombre}{" "}
             {project.ubicacion ? `· ${project.ubicacion}` : ""}
           </p>
-        </div>
-        {hasRole("ADMIN", "ENCARGADO") && (
-          <button className="btn-primary" onClick={() => setShowCreate(true)}>
-            <Plus size={15} />
-            Nuevo subproyecto
-          </button>
-        )}
-      </div>
-
-      {/* Budget */}
-      <div className="card p-5">
-        <div className="flex justify-between items-center mb-2">
-          <span className="text-sm text-slate-400">Presupuesto utilizado</span>
-          <span
-            className={`font-mono text-sm font-bold ${pct > 100 ? "text-red-400" : "text-brand-400"}`}
-          >
-            {pct}%
-          </span>
-        </div>
-        <div className="h-2 bg-white/5 rounded-full overflow-hidden">
-          <div
-            className={`h-full rounded-full ${pct > 100 ? "bg-red-500" : "bg-brand-500"}`}
-            style={{ width: `${Math.min(pct, 100)}%` }}
-          />
-        </div>
-        <div className="flex justify-between text-xs text-slate-600 mt-1">
-          <span>Gastado: ${spent.toLocaleString("es-MX")}</span>
-          <span>Total: ${budget.toLocaleString("es-MX")}</span>
-        </div>
-      </div>
-
-      {/* Subprojects */}
-      <div className="card">
-        <div className="px-5 py-4 border-b border-white/5">
-          <h2 className="font-semibold text-slate-300 text-sm">
-            Contratos ({project.Contracts?.length || 0})
-          </h2>
-        </div>
-        <div className="divide-y divide-white/5">
-          {project.Contracts?.map((sp) => (
-            <div
-              key={sp.id}
-              className="px-5 py-3.5 flex items-center justify-between hover:bg-white/[0.02] cursor-pointer"
-              onClick={() => navigate(`/subprojects/${sp.id}`)}
-            >
-              <div>
-                <div className="text-sm font-medium text-white">
-                  {sp.nombre}
-                  {console.log(sp)}
-                </div>
-                <div className="text-xs text-slate-500">
-                  {sp.ubicacion || sp.encargado?.nombre}
-                </div>
-              </div>
-              <div className="flex items-center gap-3">
-                <span className="text-xs text-slate-600">
-                  {sp._count?.tasks || 0} tareas
-                </span>
-                <span
-                  className={`badge badge-${sp.estado === "ACTIVO" ? "green" : sp.estado === "COMPLETADO" ? "gray" : "yellow"}`}
-                >
-                  {sp.estado}
-                </span>
-                <ChevronRight size={14} className="text-slate-600" />
-              </div>
+          {hasRole("ADMIN") && (
+            <div className="mt-2 flex items-center gap-2">
+              <span className="text-xs text-slate-400">Cambiar estado:</span>
+              <select
+                className="input input-xs"
+                value={project.estado}
+                onChange={(e) => {
+                  const next = e.target.value;
+                  const allowed = [
+                    "PLANEACION",
+                    "ACTIVO",
+                    "EN_PAUSA",
+                    "COMPLETADO",
+                    "CANCELADO",
+                  ];
+                  if (!allowed.includes(next)) {
+                    toast.error("Estado inválido");
+                    return;
+                  }
+                  statusMutation.mutate({ projectId: id, estado: next });
+                }}
+                disabled={statusMutation.isLoading}
+              >
+                <option value="PLANEACION">PLANEACION</option>
+                <option value="ACTIVO">ACTIVO</option>
+                <option value="EN_PAUSA">EN_PAUSA</option>
+                <option value="COMPLETADO">COMPLETADO</option>
+                <option value="CANCELADO">CANCELADO</option>
+              </select>
             </div>
-          ))}
-          {!project.Contracts?.length && (
-            <p className="px-5 py-8 text-center text-slate-600 text-sm">
-              Sin contratos aún
-            </p>
           )}
         </div>
       </div>
 
-      <Modal
-        open={showCreate}
-        onClose={() => setShowCreate(false)}
-        title="Nuevo Subproyecto"
-      >
-        <SubprojectForm
-          proyectoId={id}
-          onSubmit={createSubMutation.mutate}
-          isLoading={createSubMutation.isPending}
-        />
-      </Modal>
+      {/* asignaciones */}
+      <div className="space-y-6">
+        {Object.entries(assignmentsByStatus).map(([status, items]) => (
+          <div key={status} className="card">
+            {/* Header */}
+            <div className="px-5 py-4 border-b border-white/5 flex justify-between">
+              <h2 className="font-semibold text-slate-300 text-sm">
+                {status} ({items.length})
+              </h2>
+            </div>
+
+            {/* Table */}
+            <div className="divide-y divide-white/5">
+              {items.map((a) => (
+                <div
+                  key={a.id}
+                  className="px-5 py-3.5 flex items-center justify-between hover:bg-white/[0.02]"
+                >
+                  <div>
+                    <div className="text-sm font-medium text-white">
+                      {a.trabajador?.nombre || "Sin trabajador"}
+                    </div>
+
+                    <div className="text-xs text-slate-500">
+                      {a.resource?.nombre || "Sin herramienta"}
+                    </div>
+
+                    <div className="text-xs text-slate-500">
+                      Estado de recurso:{" "}
+                      {a.resource?.estado || "Sin estado de recurso"}
+                    </div>
+
+                    {a?.quantity && (
+                      <div className="text-xs text-slate-500">
+                        Cantidad asignada: {a.quantity}
+                      </div>
+                    )}
+
+                    {a?.resource?.stock && (
+                      <div className="text-xs text-slate-500">
+                        Stock disponible: {a.resource.stock}
+                      </div>
+                    )}
+
+                    <div className="text-xs text-slate-500">
+                      Fecha límite:{" "}
+                      {a.fechaLimite
+                        ? new Date(a.fechaLimite).toLocaleDateString()
+                        : "Sin fecha"}
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    {/* Estado de asignación */}
+                    <span
+                      className={`badge badge-${
+                        a.estado === "ACTIVA"
+                          ? "green"
+                          : a.estado === "DEVUELTA"
+                            ? "gray"
+                            : "yellow"
+                      }`}
+                    >
+                      {a.estado}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+
+        {!assignments.length && (
+          <p className="text-center text-slate-600 text-sm">
+            Sin asignaciones aún
+          </p>
+        )}
+      </div>
+
+      {/* Trabajadores asignados */}
+      {project.estado !== "CANCELADO" && project.estado !== "COMPLETADO" && (
+        <div className="card">
+          <div className="px-5 py-4 border-b border-white/5">
+            <h2 className="font-semibold text-slate-300 text-sm">
+              Trabajadores asignados ({workers.length})
+            </h2>
+          </div>
+          <div className="p-4 flex gap-2 border-b border-white/5">
+            <select
+              className="input flex-1"
+              onChange={(e) => {
+                if (e.target.value) {
+                  assignWorkerMutation.mutate(e.target.value);
+                  e.target.value = ""; // Reset select
+                }
+              }}
+              defaultValue=""
+            >
+              <option value="" disabled>
+                Seleccionar trabajador
+              </option>
+              {workersAvailable
+                .filter((w) => !workers.some((aw) => aw.trabajadorId === w.id))
+                .map((w) => (
+                  <option key={w.id} value={w.id}>
+                    {w.nombre}
+                  </option>
+                ))}
+            </select>
+          </div>
+          <div className="divide-y divide-white/5">
+            {workers.map((w) => (
+              <div
+                key={w.id}
+                className="px-5 py-3 flex justify-between items-center"
+              >
+                <div>
+                  <div className="text-sm">{w.trabajador.nombre}</div>
+                  <div className="text-xs text-slate-500">
+                    {w.trabajador.identificador}
+                  </div>
+                </div>
+                <button
+                  className="text-red-400 text-xs hover:text-red-300"
+                  onClick={() => removeWorkerMutation.mutate(w.trabajadorId)}
+                >
+                  Quitar
+                </button>
+              </div>
+            ))}
+          </div>
+          {!workers.length && (
+            <p className="px-5 py-8 text-center text-slate-600 text-sm">
+              Sin trabajadores asignados
+            </p>
+          )}
+        </div>
+      )}
     </div>
   );
 }

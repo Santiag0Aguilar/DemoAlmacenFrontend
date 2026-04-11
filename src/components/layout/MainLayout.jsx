@@ -19,25 +19,48 @@ import {
   Bell,
 } from "lucide-react";
 import clsx from "clsx";
+import LogoDicast from "@/assets/Humer_Logo.png";
 
 const navItems = [
   {
     group: "General",
-    items: [{ to: "/dashboard", icon: LayoutDashboard, label: "Dashboard" }],
+    items: [
+      {
+        to: "/dashboard",
+        icon: LayoutDashboard,
+        label: "Dashboard",
+        roles: ["ADMIN"],
+      },
+    ],
   },
   {
     group: "Herramientas",
     items: [
       { to: "/tools", icon: Wrench, label: "Catálogo" },
       { to: "/assignments", icon: ClipboardList, label: "Asignaciones" },
-      { to: "/incidents", icon: AlertTriangle, label: "Incidencias" },
+      {
+        to: "/incidents",
+        icon: AlertTriangle,
+        label: "Incidencias",
+        roles: ["ADMIN", "ENCARGADO"],
+      },
     ],
   },
   {
     group: "Proyectos",
     items: [
-      { to: "/clients", icon: Building2, label: "Clientes" },
-      { to: "/projects", icon: FolderKanban, label: "Proyectos" },
+      {
+        to: "/clients",
+        icon: Building2,
+        label: "Clientes",
+        roles: ["ADMIN"],
+      },
+      {
+        to: "/projects",
+        icon: FolderKanban,
+        label: "Proyectos",
+        roles: ["ADMIN", "ENCARGADO"],
+      },
     ],
   },
   {
@@ -47,13 +70,7 @@ const navItems = [
         to: "/workers",
         icon: Users,
         label: "Trabajadores",
-        roles: ["ADMIN", "ENCARGADO"],
-      },
-      {
-        to: "/finance",
-        icon: DollarSign,
-        label: "Finanzas",
-        roles: ["ADMIN", "ENCARGADO"],
+        roles: ["ADMIN"],
       },
     ],
   },
@@ -91,18 +108,12 @@ export default function MainLayout() {
     <div className="flex flex-col h-full">
       {/* Logo */}
       <div className="px-5 py-5 border-b border-white/5">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8  rounded-lg flex items-center justify-center shadow-glow-sm">
-            <span className="font-display font-bold text-white text-sm">H</span>
-          </div>
-          <div>
-            <span className="font-display font-bold text-white text-lg tracking-tight">
-              Humer
-            </span>
-            <div className="text-[10px] text-slate-600 uppercase tracking-widest">
-              Sistema Gestión Empresarial
-            </div>
-          </div>
+        <div className="flex items-center justify-center">
+          <img
+            src={LogoDicast}
+            alt="Dicast Logo"
+            className="h-13 object-contain"
+          />
         </div>
       </div>
 
@@ -166,9 +177,9 @@ export default function MainLayout() {
   );
 
   return (
-    <div className="flex h-screen bg-[#0d1117] overflow-hidden">
+    <div className="flex h-screen bg-[#0f0f0f] overflow-hidden">
       {/* Sidebar desktop */}
-      <aside className="hidden lg:flex w-56 flex-col bg-[#0d1117] border-r border-white/5 flex-shrink-0">
+      <aside className="hidden lg:flex w-56 flex-col bg-[#0f0f0f] border-r border-white/5 flex-shrink-0">
         <SidebarContent />
       </aside>
 
@@ -181,7 +192,7 @@ export default function MainLayout() {
       )}
       <aside
         className={clsx(
-          "fixed top-0 left-0 h-full w-64 z-50 bg-[#0d1117] border-r border-white/5 flex flex-col transition-transform duration-200 lg:hidden",
+          "fixed top-0 left-0 h-full w-64 z-50 bg-[#0f0f0f] border-r border-white/5 flex flex-col transition-transform duration-200 lg:hidden",
           sidebarOpen ? "translate-x-0" : "-translate-x-full",
         )}
       >

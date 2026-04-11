@@ -20,12 +20,16 @@ export const toolsService = {
   create: (data) => api.post("/resource", data).then((r) => r.data.data),
   update: (id, data) =>
     api.patch(`/resource/${id}`, data).then((r) => r.data.data),
+  patchAdmin: (id, data) =>
+    api.patch(`/resource/${id}/edit`, data).then((r) => r.data.data),
   delete: (id) => api.delete(`/resource/${id}`),
 };
 
 export const assignmentsService = {
   getAll: (params) =>
     api.get("/assignments", { params }).then((r) => r.data.data),
+  getByProject: (id) =>
+    api.get(`/assignments/byproject/${id}`).then((r) => r.data.data),
   getOverdue: () => api.get("/assignments/overdue").then((r) => r.data.data),
   create: (data) => api.post("/assignments", data).then((r) => r.data.data),
   returnTool: (id, data) =>
@@ -46,6 +50,27 @@ export const projectsService = {
   create: (data) => api.post("/projects", data).then((r) => r.data.data),
   update: (id, data) =>
     api.patch(`/projects/${id}`, data).then((r) => r.data.data),
+};
+
+export const projectWorkersService = {
+  getByProject: (projectId) =>
+    api.get(`/projects/${projectId}/workers`).then((r) => r.data.data),
+
+  assign: (projectId, data) =>
+    api.post(`/projects/${projectId}/workers`, data).then((r) => r.data.data),
+
+  remove: (projectId, workerId) =>
+    api.patch(`/projects/${projectId}/workers/${workerId}/remove`),
+};
+
+export const attendanceService = {
+  getToday: (projectId) =>
+    api.get(`/projects/${projectId}/attendance/today`).then((r) => r.data.data),
+
+  create: (projectId, data) =>
+    api
+      .post(`/projects/${projectId}/attendance`, data)
+      .then((r) => r.data.data),
 };
 
 export const subprojectsService = {
@@ -88,6 +113,34 @@ export const dashboardService = {
     api.get("/dashboard/tools-summary").then((r) => r.data.data),
 };
 
+export const reportsService = {
+  downloadWeekly: (startDate, endDate) =>
+    api.get("/reports/weekly", {
+      params: { startDate, endDate },
+      responseType: "blob",
+    }),
+
+  downloadTools: (startDate, endDate) =>
+    api.get("/reports/tools", {
+      params: { startDate, endDate },
+      responseType: "blob",
+    }),
+
+  downloadConsumables: (startDate, endDate) =>
+    api.get("/reports/consumables", {
+      params: { startDate, endDate },
+      responseType: "blob",
+    }),
+
+  downloadIncidents: (startDate, endDate) =>
+    api.get("/reports/incidents", {
+      params: { startDate, endDate },
+      responseType: "blob",
+    }),
+
+  downloadInventory: () =>
+    api.get("/reports/inventory", { responseType: "blob" }),
+};
 export const financeService = {
   getAll: (params) => api.get("/finance", { params }).then((r) => r.data.data),
   getById: (id) => api.get(`/finance/${id}`).then((r) => r.data.data),
@@ -96,4 +149,18 @@ export const financeService = {
     api.patch(`/finance/${id}/approve`, { approved }).then((r) => r.data.data),
   getProjectSummary: (proyectoId) =>
     api.get(`/finance/summary/project/${proyectoId}`).then((r) => r.data.data),
+};
+
+export const unidadesMedidaService = {
+  getAll: (params) =>
+    api.get("/unidadesMedida", { params }).then((r) => r.data.data),
+
+  getById: (id) => api.get(`/unidadesMedida/${id}`).then((r) => r.data.data),
+
+  create: (data) => api.post("/unidadesMedida", data).then((r) => r.data.data),
+
+  update: (id, data) =>
+    api.put(`/unidadesMedida/${id}`, data).then((r) => r.data.data),
+
+  delete: (id) => api.delete(`/unidadesMedida/${id}`).then((r) => r.data.data),
 };

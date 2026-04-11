@@ -1,28 +1,28 @@
 // src/pages/dashboard/DashboardPage.jsx
 import { useQuery } from "@tanstack/react-query";
-import { dashboardService } from "@/services";
+import { dashboardService, reportsService } from "@/services";
+import { useState } from "react";
+import Modal from "@/components/ui/Modal";
+import toast from "react-hot-toast";
+
 import {
   AlertTriangle,
   Wrench,
   Clock,
-  TrendingUp,
   CheckCircle2,
   Package,
-  ArrowUpRight,
   Activity,
   Loader2,
+  FileDown,
+  FileSpreadsheet,
 } from "lucide-react";
 import {
-  AreaChart,
-  Area,
-  XAxis,
-  YAxis,
-  Tooltip,
-  ResponsiveContainer,
   PieChart,
   Pie,
   Cell,
+  Tooltip,
   Legend,
+  ResponsiveContainer,
 } from "recharts";
 import clsx from "clsx";
 
@@ -60,9 +60,11 @@ function KpiCard({ label, value, sub, icon: Icon, color = "orange", trend }) {
 // ─── Tool status pie ───────────────────────────────────────────────
 const PIE_COLORS = {
   ACTIVA: "#10b981",
-  EN_PRESTAMO: "#f97316",
+  EN_PRESTAMO: "#ff9a3d",
   DANADA: "#ef4444",
   PERDIDA: "#6366f1",
+  STOCK: "#3b82f6",
+  SIN_STOCK: "#facc15",
 };
 
 function ToolStatusChart({ data }) {
@@ -88,7 +90,7 @@ function ToolStatusChart({ data }) {
         </Pie>
         <Tooltip
           contentStyle={{
-            background: "#161b27",
+            background: "#1a1a1a",
             border: "1px solid rgba(255,255,255,0.08)",
             borderRadius: "8px",
             fontSize: 12,
@@ -134,12 +136,112 @@ function AlertRow({ icon: Icon, text, color = "red", count }) {
   );
 }
 
+// Helper para disparar la descarga del blob
+function triggerDownload(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+// Modal de rango de fechas reutilizable
+function DateRangeModal({ open, onClose, onConfirm, title, isLoading }) {
+  const today = new Date().toISOString().split("T")[0];
+  const weekAgo = new Date(Date.now() - 7 * 86400000)
+    .toISOString()
+    .split("T")[0];
+  const [startDate, setStartDate] = useState(weekAgo);
+  const [endDate, setEndDate] = useState(today);
+
+  const handleConfirm = () => {
+    if (!startDate || !endDate) return toast.error("Selecciona ambas fechas");
+    if (startDate > endDate)
+      return toast.error("La fecha inicio debe ser antes que la fecha fin");
+    onConfirm(startDate, endDate);
+  };
+
+  return (
+    <Modal open={open} onClose={onClose} title={title}>
+      <div className="space-y-4">
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="input-label">Fecha inicio *</label>
+            <input
+              type="date"
+              className="input"
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+            />
+          </div>
+          <div>
+            <label className="input-label">Fecha fin *</label>
+            <input
+              type="date"
+              className="input"
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+            />
+          </div>
+        </div>
+        <div className="flex justify-end gap-2 pt-2">
+          <button className="btn-ghost" onClick={onClose}>
+            Cancelar
+          </button>
+          <button
+            className="btn-primary"
+            onClick={handleConfirm}
+            disabled={isLoading}
+          >
+            {isLoading && <Loader2 size={14} className="animate-spin" />}
+            Descargar
+          </button>
+        </div>
+      </div>
+    </Modal>
+  );
+}
+
+// Botón de reporte individual
+function ReportButton({
+  label,
+  icon: Icon = FileSpreadsheet,
+  onClick,
+  loading,
+}) {
+  return (
+    <button
+      onClick={onClick}
+      disabled={loading}
+      className="flex items-center gap-3 w-full px-4 py-3 rounded-lg border border-white/8 bg-white/3 hover:bg-white/6 hover:border-white/15 transition-all text-left group"
+    >
+      <div className="w-8 h-8 rounded-md bg-brand-500/10 border border-brand-500/20 flex items-center justify-center shrink-0">
+        {loading ? (
+          <Loader2 size={14} className="text-brand-400 animate-spin" />
+        ) : (
+          <Icon size={14} className="text-brand-400" />
+        )}
+      </div>
+      <span className="text-sm text-slate-300 group-hover:text-white transition-colors flex-1">
+        {label}
+      </span>
+      <FileDown
+        size={13}
+        className="text-slate-600 group-hover:text-slate-400 transition-colors"
+      />
+    </button>
+  );
+}
+
 export default function DashboardPage() {
   const { data, isLoading, error } = useQuery({
     queryKey: ["dashboard-executive"],
     queryFn: dashboardService.getExecutive,
     refetchInterval: 60_000, // Refresca cada minuto
   });
+  const [activeReport, setActiveReport] = useState(null); // 'weekly' | 'tools' | 'consumables' | 'incidents'
+  const [loadingReport, setLoadingReport] = useState(false);
 
   if (isLoading) {
     return (
@@ -159,14 +261,59 @@ export default function DashboardPage() {
   }
 
   const { tools = {}, alerts = {}, details = {} } = data || {};
-  const totalTools = Object.values(tools).reduce((a, b) => a + b, 0);
+  console.log("Dashboard data:", data);
+  const totalTools = tools.ACTIVA || 0;
+  const totalConsumables = tools.STOCK || 0;
 
+  /* FUNCIONALIDAD DE DESCARGA */
+  // ── Estado para modales de reportes ──────────────────────────────
+
+  const openModal = (key) => setActiveReport(key);
+  const closeModal = () => {
+    if (!loadingReport) setActiveReport(null);
+  };
+
+  const handleDateReport = async (key, startDate, endDate) => {
+    setLoadingReport(true);
+    try {
+      const serviceMap = {
+        weekly: () => reportsService.downloadWeekly(startDate, endDate),
+        tools: () => reportsService.downloadTools(startDate, endDate),
+        consumables: () =>
+          reportsService.downloadConsumables(startDate, endDate),
+        incidents: () => reportsService.downloadIncidents(startDate, endDate),
+      };
+      const res = await serviceMap[key]();
+      triggerDownload(res.data, `reporte-${key}-${startDate}-${endDate}.xlsx`);
+      toast.success("Reporte descargado");
+      setActiveReport(null);
+    } catch {
+      toast.error("Error al generar el reporte");
+    } finally {
+      setLoadingReport(false);
+    }
+  };
+
+  const handleInventory = async () => {
+    setLoadingReport(true);
+    try {
+      const res = await reportsService.downloadInventory();
+      triggerDownload(res.data, "reporte-inventario.xlsx");
+      toast.success("Reporte descargado");
+    } catch {
+      toast.error("Error al generar el reporte");
+    } finally {
+      setLoadingReport(false);
+    }
+  };
+
+  const REPORT_MODALS = [{ key: "weekly", label: "Reporte semanal completo" }];
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Header */}
       <div className="page-header">
         <div>
-          <h1 className="page-title">Dashboard Ejecutivo</h1>
+          <h1 className="page-title">Panel de Control</h1>
           <p className="page-subtitle">
             Visión general de operaciones en tiempo real
           </p>
@@ -183,8 +330,15 @@ export default function DashboardPage() {
           label="Herramientas totales"
           value={totalTools}
           sub={`${tools.EN_PRESTAMO || 0} en préstamo`}
-          icon={Package}
+          icon={Wrench}
           color="orange"
+        />
+        <KpiCard
+          label="Consumibles totales"
+          value={totalConsumables}
+          sub={`${tools.SIN_STOCK || 0} sin stock`}
+          icon={Package}
+          color="blue"
         />
         <KpiCard
           label="Préstamos vencidos"
@@ -199,13 +353,6 @@ export default function DashboardPage() {
           sub="Sin resolver"
           icon={AlertTriangle}
           color={alerts.incidentesSinResolver > 0 ? "yellow" : "green"}
-        />
-        <KpiCard
-          label="Proyectos c/ desviación"
-          value={alerts.proyectosConDesviacion}
-          sub="Sobre presupuesto"
-          icon={TrendingUp}
-          color={alerts.proyectosConDesviacion > 0 ? "red" : "green"}
         />
       </div>
 
@@ -225,10 +372,22 @@ export default function DashboardPage() {
               <div className="text-xs text-slate-600">Disponibles</div>
             </div>
             <div className="text-center">
+              <div className="text-lg font-bold text-emerald-400">
+                {tools.STOCK || 0}
+              </div>
+              <div className="text-xs text-slate-600">Con existencia</div>
+            </div>
+            <div className="text-center">
               <div className="text-lg font-bold text-red-400">
                 {(tools.DANADA || 0) + (tools.PERDIDA || 0)}
               </div>
               <div className="text-xs text-slate-600">No disponibles</div>
+            </div>
+            <div className="text-center">
+              <div className="text-lg font-bold text-red-400">
+                {tools.SIN_STOCK || 0}
+              </div>
+              <div className="text-xs text-slate-600">Sin existencia</div>
             </div>
           </div>
         </div>
@@ -253,14 +412,6 @@ export default function DashboardPage() {
                 text="Incidencias sin resolver"
                 count={alerts.incidentesSinResolver}
                 color="yellow"
-              />
-            )}
-            {alerts.proyectosConDesviacion > 0 && (
-              <AlertRow
-                icon={TrendingUp}
-                text="Proyectos con desviación presupuestal"
-                count={alerts.proyectosConDesviacion}
-                color="orange"
               />
             )}
             {alerts.subproyectosRetrasados > 0 && (
@@ -366,6 +517,36 @@ export default function DashboardPage() {
           </div>
         </div>
       )}
+
+      {/* ── Reportes ───────────────────────────────────────────────── */}
+      <div className="card p-5">
+        <h2 className="text-sm font-semibold text-slate-300 mb-4 flex items-center gap-2">
+          <FileSpreadsheet size={14} className="text-brand-400" />
+          Exportar Reportes
+        </h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2">
+          {REPORT_MODALS.map(({ key, label }) => (
+            <ReportButton
+              key={key}
+              label={label}
+              onClick={() => openModal(key)}
+              loading={loadingReport && activeReport === key}
+            />
+          ))}
+        </div>
+      </div>
+
+      {/* Modales de rango de fechas */}
+      {REPORT_MODALS.map(({ key, label }) => (
+        <DateRangeModal
+          key={key}
+          open={activeReport === key}
+          onClose={closeModal}
+          title={`Descargar — ${label}`}
+          isLoading={loadingReport}
+          onConfirm={(start, end) => handleDateReport(key, start, end)}
+        />
+      ))}
     </div>
   );
 }

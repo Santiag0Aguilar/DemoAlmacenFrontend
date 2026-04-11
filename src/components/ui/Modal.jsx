@@ -1,29 +1,33 @@
 // src/components/ui/Modal.jsx
-import { useEffect } from 'react';
-import { X } from 'lucide-react';
-import clsx from 'clsx';
+import { useEffect } from "react";
+import { X } from "lucide-react";
+import clsx from "clsx";
 
-export default function Modal({ open, onClose, title, children, size = 'md' }) {
+export default function Modal({ open, onClose, title, children, size = "md" }) {
   // Cerrar con Escape
   useEffect(() => {
-    const handler = (e) => { if (e.key === 'Escape') onClose(); };
-    if (open) document.addEventListener('keydown', handler);
-    return () => document.removeEventListener('keydown', handler);
+    const handler = (e) => {
+      if (e.key === "Escape") onClose();
+    };
+    if (open) document.addEventListener("keydown", handler);
+    return () => document.removeEventListener("keydown", handler);
   }, [open, onClose]);
 
   // Prevenir scroll del body
   useEffect(() => {
-    document.body.style.overflow = open ? 'hidden' : '';
-    return () => { document.body.style.overflow = ''; };
+    document.body.style.overflow = open ? "hidden" : "";
+    return () => {
+      document.body.style.overflow = "";
+    };
   }, [open]);
 
   if (!open) return null;
 
   const sizes = {
-    sm: 'max-w-sm',
-    md: 'max-w-lg',
-    lg: 'max-w-2xl',
-    xl: 'max-w-4xl',
+    sm: "max-w-sm",
+    md: "max-w-lg",
+    lg: "max-w-2xl",
+    xl: "max-w-4xl",
   };
 
   return (
@@ -37,8 +41,8 @@ export default function Modal({ open, onClose, title, children, size = 'md' }) {
       {/* Modal */}
       <div
         className={clsx(
-          'relative w-full bg-[#161b27] border border-white/8 rounded-xl shadow-2xl animate-fade-in',
-          sizes[size]
+          "relative w-full bg-[#1a1a1a] border border-white/8 rounded-xl shadow-2xl animate-fade-in",
+          sizes[size],
         )}
       >
         {/* Header */}
@@ -53,9 +57,7 @@ export default function Modal({ open, onClose, title, children, size = 'md' }) {
         </div>
 
         {/* Body */}
-        <div className="px-5 py-5 max-h-[70vh] overflow-y-auto">
-          {children}
-        </div>
+        <div className="px-5 py-5 max-h-[70vh] overflow-y-auto">{children}</div>
       </div>
     </div>
   );

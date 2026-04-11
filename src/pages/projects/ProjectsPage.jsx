@@ -29,7 +29,6 @@ function ProjectForm({ onSubmit, isLoading }) {
     descripcion: "",
     clienteId: "",
     encargadoId: "",
-    presupuestoAsignado: "",
     fechaInicio: "",
     fechaEstimada: "",
     ubicacion: "",
@@ -95,18 +94,7 @@ function ProjectForm({ onSubmit, isLoading }) {
             ))}
           </select>
         </div>
-        <div>
-          <label className="input-label">Presupuesto (MXN) *</label>
-          <input
-            className="input"
-            type="number"
-            min="0"
-            step="0.01"
-            value={form.presupuestoAsignado}
-            onChange={set("presupuestoAsignado")}
-            required
-          />
-        </div>
+
         <div>
           <label className="input-label">Ubicación</label>
           <input
@@ -167,6 +155,18 @@ export default function ProjectsPage() {
     queryFn: projectsService.getAll,
   });
 
+  const statusMutation = useMutation({
+    mutationFn: ({ projectId, estado }) =>
+      projectsService.update(projectId, { estado }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["projects"] });
+      toast.success("Estado del proyecto actualizado");
+    },
+    onError: (e) => {
+      toast.error(e.response?.data?.message || "Error actualizando estado");
+    },
+  });
+
   const createMutation = useMutation({
     mutationFn: projectsService.create,
     onSuccess: () => {
@@ -184,7 +184,7 @@ export default function ProjectsPage() {
           <h1 className="page-title">Proyectos</h1>
           <p className="page-subtitle">{projects.length} proyectos</p>
         </div>
-        {hasRole("ADMIN", "ENCARGADO") && (
+        {hasRole("ADMIN") && (
           <button className="btn-primary" onClick={() => setShowCreate(true)}>
             <Plus size={15} /> Nuevo proyecto
           </button>
@@ -235,34 +235,6 @@ export default function ProjectsPage() {
                 <div className="text-xs text-slate-500 mb-4">
                   Encargado:{" "}
                   <span className="text-slate-400">{p.encargado?.nombre}</span>
-                </div>
-
-                {/* Budget bar */}
-                <div className="space-y-1.5">
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="text-slate-600">Presupuesto</span>
-                    <span
-                      className={clsx(
-                        "font-medium",
-                        isOver ? "text-red-400" : "text-slate-400",
-                      )}
-                    >
-                      {pct}% {isOver && "⚠️"}
-                    </span>
-                  </div>
-                  <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
-                    <div
-                      className={clsx(
-                        "h-full rounded-full transition-all",
-                        isOver ? "bg-red-500" : "bg-brand-500",
-                      )}
-                      style={{ width: `${Math.min(pct, 100)}%` }}
-                    />
-                  </div>
-                  <div className="flex justify-between text-xs text-slate-700">
-                    <span>${spent.toLocaleString("es-MX")}</span>
-                    <span>${budget.toLocaleString("es-MX")}</span>
-                  </div>
                 </div>
 
                 <div className="flex items-center justify-between mt-4">

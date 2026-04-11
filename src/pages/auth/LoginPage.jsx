@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "@/store/authStore";
 import { Eye, EyeOff, Loader2, HardHat } from "lucide-react";
+import LogoDicast from "@/assets/Humer_Logo.png";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -24,7 +25,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0a0f1a] flex items-center justify-center p-4 bg-grid-pattern relative overflow-hidden">
+    <div className="min-h-screen bg-[#0f0f0f] flex items-center justify-center p-4 bg-grid-pattern relative overflow-hidden">
       {/* Background glow */}
       <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-96 h-96 bg-brand-500/5 rounded-full blur-3xl pointer-events-none" />
 
@@ -32,18 +33,13 @@ export default function LoginPage() {
       <div className="w-full max-w-sm">
         {/* Logo */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-14 h-14 bg-brand-500/10 border border-brand-500/30 rounded-2xl mb-4 shadow-glow">
-            <div className="w-8 h-8  rounded-lg flex items-center justify-center shadow-glow-sm">
-              <span className="font-display font-bold text-white text-sm">
-                H
-              </span>
-            </div>
-          </div>
-          <h1 className="font-display text-3xl font-bold text-white tracking-tight">
-            Humer
-          </h1>
-          <p className="text-slate-500 text-sm mt-1">
-            Sistema de gestión empresarial de Humer
+          <img
+            src={LogoDicast}
+            alt="Dicast Logo"
+            className="h-20 mx-auto mb-4 object-contain"
+          />
+          <p className="text-slate-600 text-sm mt-1">
+            Sistema de gestión de almacén
           </p>
         </div>
 
