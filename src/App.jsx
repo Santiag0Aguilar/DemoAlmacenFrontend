@@ -1,7 +1,7 @@
 // src/App.jsx
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { useEffect } from "react";
 import { useAuthStore } from "@/store/authStore";
-
 // Layout
 import MainLayout from "@/components/layout/MainLayout";
 
@@ -23,17 +23,35 @@ import NotFoundPage from "@/pages/NotFoundPage";
 
 // Guard de autenticación
 function PrivateRoute({ children, roles }) {
-  const { isAuthenticated, user } = useAuthStore();
+  const { user, isLoading } = useAuthStore();
 
-  if (!isAuthenticated) return <Navigate to="/login" replace />;
-  if (roles && !roles.includes(user?.role))
+  if (isLoading) return <div>Loading...</div>; // o spinner
+
+  if (!user) return <Navigate to="/login" replace />;
+
+  if (roles && !roles.includes(user.role)) {
     return <Navigate to="/dashboard" replace />;
+  }
+
+  return children;
+}
+
+function PublicRoute({ children }) {
+  const { user, isLoading } = useAuthStore();
+
+  if (isLoading) return <div>Loading...</div>;
+
+  if (user) return <Navigate to="/dashboard" replace />;
 
   return children;
 }
 
 export default function App() {
-  const { isAuthenticated } = useAuthStore();
+  const initAuth = useAuthStore((s) => s.initAuth);
+
+  useEffect(() => {
+    initAuth();
+  }, []);
 
   return (
     <BrowserRouter>
@@ -42,11 +60,9 @@ export default function App() {
         <Route
           path="/login"
           element={
-            isAuthenticated ? (
-              <Navigate to="/dashboard" replace />
-            ) : (
+            <PublicRoute>
               <LoginPage />
-            )
+            </PublicRoute>
           }
         />
 

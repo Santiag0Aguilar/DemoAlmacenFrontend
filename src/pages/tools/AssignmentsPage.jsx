@@ -33,6 +33,7 @@ function AssignmentForm({ onSubmit, isLoading }) {
     quantity: "",
     fechaLimite: "",
     notas: "",
+    destino: "",
   });
 
   const set = (k) => (e) =>
@@ -97,6 +98,7 @@ function AssignmentForm({ onSubmit, isLoading }) {
       tipo: form.tipo,
       proyectoId: form.proyectoId || undefined,
       notas: form.notas || undefined,
+      destino: form.destino || undefined,
     };
 
     if (form.tipo === "TOOL" && form.fechaLimite) {
@@ -195,7 +197,16 @@ function AssignmentForm({ onSubmit, isLoading }) {
           />
         </div>
       )}
-
+      <div>
+        <label className="input-label">Destino</label>
+        <textarea
+          className="input resize-none"
+          rows={2}
+          value={form.destino}
+          placeholder="Escribe el uso que se le dara"
+          onChange={set("destino")}
+        />
+      </div>
       <div>
         <label className="input-label">Notas</label>
         <textarea

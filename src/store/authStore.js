@@ -1,10 +1,11 @@
 // src/store/authStore.js
 // Estado global de autenticación con Zustand
 // Zustand es más simple que Redux: define estado + acciones juntos
+// src/store/authStore.js
 
-import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
-import { authService } from '@/services';
+import { create } from "zustand";
+import { persist } from "zustand/middleware";
+import { authService } from "@/services";
 
 export const useAuthStore = create(
   persist(
@@ -12,43 +13,88 @@ export const useAuthStore = create(
       user: null,
       accessToken: null,
       refreshToken: null,
-      isAuthenticated: false,
       isLoading: false,
 
+      // 🔐 LOGIN
       login: async (email, password) => {
         set({ isLoading: true });
         try {
           const data = await authService.login(email, password);
-          localStorage.setItem('accessToken', data.accessToken);
-          localStorage.setItem('refreshToken', data.refreshToken);
+
+          localStorage.setItem("accessToken", data.accessToken);
+          localStorage.setItem("refreshToken", data.refreshToken);
+
           set({
             user: data.user,
             accessToken: data.accessToken,
             refreshToken: data.refreshToken,
-            isAuthenticated: true,
             isLoading: false,
           });
+
           return { success: true };
         } catch (error) {
           set({ isLoading: false });
-          const message = error.response?.data?.message || 'Error al iniciar sesión';
+          const message =
+            error.response?.data?.message || "Error al iniciar sesión";
           return { success: false, message };
         }
       },
 
+      // 🚪 LOGOUT
       logout: async () => {
         const { refreshToken } = get();
+
         try {
-          await authService.logout(refreshToken);
+          if (refreshToken) {
+            await authService.logout(refreshToken);
+          }
         } catch (_) {
-          // Continuar aunque falle el logout en el servidor
+          // ignorar error
         }
-        localStorage.removeItem('accessToken');
-        localStorage.removeItem('refreshToken');
-        set({ user: null, accessToken: null, refreshToken: null, isAuthenticated: false });
+
+        localStorage.removeItem("accessToken");
+        localStorage.removeItem("refreshToken");
+
+        set({
+          user: null,
+          accessToken: null,
+          refreshToken: null,
+        });
       },
 
-      // Obtener perfil actualizado del servidor
+      // 🔁 VALIDAR SESIÓN AL INICIAR APP (CLAVE)
+      initAuth: async () => {
+        const token = localStorage.getItem("accessToken");
+
+        if (!token) {
+          set({ user: null });
+          return;
+        }
+
+        set({ isLoading: true });
+
+        try {
+          const user = await authService.me();
+
+          set({
+            user,
+          });
+        } catch (error) {
+          // Token inválido / backend dormido / error
+          localStorage.removeItem("accessToken");
+          localStorage.removeItem("refreshToken");
+
+          set({
+            user: null,
+            accessToken: null,
+            refreshToken: null,
+          });
+        } finally {
+          set({ isLoading: false });
+        }
+      },
+
+      // 👤 Refrescar usuario manualmente
       refreshUser: async () => {
         try {
           const user = await authService.me();
@@ -58,20 +104,21 @@ export const useAuthStore = create(
         }
       },
 
+      // 🛡️ Roles
       hasRole: (...roles) => {
         const { user } = get();
         return user && roles.includes(user.role);
       },
     }),
     {
-      name: 'construck-auth',
-      // Solo persistir lo necesario (no el loading state)
+      name: "construck-auth",
+
+      // 🔥 SOLO persistir lo necesario
       partialize: (state) => ({
         user: state.user,
         accessToken: state.accessToken,
         refreshToken: state.refreshToken,
-        isAuthenticated: state.isAuthenticated,
       }),
-    }
-  )
+    },
+  ),
 );

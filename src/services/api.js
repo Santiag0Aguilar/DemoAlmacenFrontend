@@ -1,20 +1,20 @@
 // src/services/api.js
 // Cliente HTTP central con manejo automático de JWT y refresh tokens
+import { useAuthStore } from "@/store/authStore";
+import axios from "axios";
+import toast from "react-hot-toast";
 
-import axios from 'axios';
-import toast from 'react-hot-toast';
-
-const BASE_URL = import.meta.env.VITE_API_URL || '/api/v1';
+const BASE_URL = import.meta.env.VITE_API_URL || "/api/v1";
 
 export const api = axios.create({
   baseURL: BASE_URL,
-  headers: { 'Content-Type': 'application/json' },
+  headers: { "Content-Type": "application/json" },
   timeout: 15000,
 });
 
 // ─── Interceptor de REQUEST: inyectar access token ───────────────
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('accessToken');
+  const token = localStorage.getItem("accessToken");
   if (token) config.headers.Authorization = `Bearer ${token}`;
   return config;
 });
@@ -39,8 +39,8 @@ api.interceptors.response.use(
     if (
       error.response?.status === 401 &&
       !original._retry &&
-      !original.url?.includes('/auth/refresh') &&
-      !original.url?.includes('/auth/login')
+      !original.url?.includes("/auth/refresh") &&
+      !original.url?.includes("/auth/login")
     ) {
       if (isRefreshing) {
         // Cola de peticiones en espera del nuevo token
@@ -58,15 +58,17 @@ api.interceptors.response.use(
       isRefreshing = true;
 
       try {
-        const refreshToken = localStorage.getItem('refreshToken');
-        if (!refreshToken) throw new Error('No refresh token');
+        const refreshToken = localStorage.getItem("refreshToken");
+        if (!refreshToken) throw new Error("No refresh token");
 
-        const { data } = await axios.post(`${BASE_URL}/auth/refresh`, { refreshToken });
+        const { data } = await axios.post(`${BASE_URL}/auth/refresh`, {
+          refreshToken,
+        });
         const newAccessToken = data.data.accessToken;
         const newRefreshToken = data.data.refreshToken;
 
-        localStorage.setItem('accessToken', newAccessToken);
-        localStorage.setItem('refreshToken', newRefreshToken);
+        localStorage.setItem("accessToken", newAccessToken);
+        localStorage.setItem("refreshToken", newRefreshToken);
 
         processQueue(null, newAccessToken);
         original.headers.Authorization = `Bearer ${newAccessToken}`;
@@ -74,9 +76,9 @@ api.interceptors.response.use(
       } catch (refreshError) {
         processQueue(refreshError, null);
         // Limpiar sesión
-        localStorage.removeItem('accessToken');
-        localStorage.removeItem('refreshToken');
-        window.location.href = '/login';
+        localStorage.removeItem("accessToken");
+        localStorage.removeItem("refreshToken");
+        useAuthStore.getState().logout();
         return Promise.reject(refreshError);
       } finally {
         isRefreshing = false;
@@ -86,13 +88,13 @@ api.interceptors.response.use(
     // Mostrar toast de error genérico (excepto 401 silenciosos)
     const message = error.response?.data?.message;
     if (error.response?.status >= 500) {
-      toast.error('Error del servidor. Intenta de nuevo.');
+      toast.error("Error del servidor. Intenta de nuevo.");
     } else if (error.response?.status === 403) {
-      toast.error('No tienes permiso para realizar esta acción.');
+      toast.error("No tienes permiso para realizar esta acción.");
     }
 
     return Promise.reject(error);
-  }
+  },
 );
 
 export default api;

@@ -29,7 +29,6 @@ function ProjectForm({ onSubmit, isLoading }) {
     descripcion: "",
     clienteId: "",
     encargadoId: "",
-    presupuestoAsignado: "",
     fechaInicio: "",
     fechaEstimada: "",
     ubicacion: "",
@@ -95,18 +94,7 @@ function ProjectForm({ onSubmit, isLoading }) {
             ))}
           </select>
         </div>
-        <div>
-          <label className="input-label">Presupuesto (MXN) *</label>
-          <input
-            className="input"
-            type="number"
-            min="0"
-            step="0.01"
-            value={form.presupuestoAsignado}
-            onChange={set("presupuestoAsignado")}
-            required
-          />
-        </div>
+
         <div>
           <label className="input-label">Ubicación</label>
           <input
