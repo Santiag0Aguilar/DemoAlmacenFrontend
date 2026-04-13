@@ -427,15 +427,6 @@ export default function ToolsPage() {
         </div>
         <select
           className="input w-40"
-          value={typeFilter}
-          onChange={(e) => setTypeFilter(e.target.value)}
-        >
-          <option value="">Todos los tipos</option>
-          <option value="TOOL">Herramienta</option>
-          <option value="CONSUMABLE">Consumible</option>
-        </select>
-        <select
-          className="input w-40"
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
         >
