@@ -3,7 +3,6 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "@/store/authStore";
 import { Eye, EyeOff, Loader2, HardHat } from "lucide-react";
-import LogoDicast from "@/assets/Humer_Logo.png";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -33,11 +32,7 @@ export default function LoginPage() {
       <div className="w-full max-w-sm">
         {/* Logo */}
         <div className="text-center mb-8">
-          <img
-            src={LogoDicast}
-            alt="Dicast Logo"
-            className="h-20 mx-auto mb-4 object-contain"
-          />
+          <h2 className="text-2xl font-bold text-white">Demo</h2>
           <p className="text-slate-600 text-sm mt-1">
             Sistema de gestión de almacén
           </p>

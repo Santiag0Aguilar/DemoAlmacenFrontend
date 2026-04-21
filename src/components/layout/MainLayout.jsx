@@ -19,7 +19,6 @@ import {
   Bell,
 } from "lucide-react";
 import clsx from "clsx";
-import LogoDicast from "@/assets/Humer_Logo.png";
 
 const navItems = [
   {
@@ -109,11 +108,7 @@ export default function MainLayout() {
       {/* Logo */}
       <div className="px-5 py-5 border-b border-white/5">
         <div className="flex items-center justify-center">
-          <img
-            src={LogoDicast}
-            alt="Dicast Logo"
-            className="h-13 object-contain"
-          />
+          <h2>Demo</h2>
         </div>
       </div>
 

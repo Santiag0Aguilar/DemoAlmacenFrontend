@@ -6,7 +6,6 @@ export default {
   theme: {
     extend: {
       colors: {
-        // Humer brand - industrial / metallic aesthetic
         brand: {
           50: "#fdf8f0",
           100: "#f9edda",
